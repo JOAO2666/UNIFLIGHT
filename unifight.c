@@ -8,6 +8,7 @@
 #define ALTURA_TELA 1080
 #define MAX_PERSONAGENS 6
 #define OPCOES_MENU 3
+#define OPCOES_CONFIG 8
 #define MAX_MAPAS 6
 #define VIDA_MAXIMA 100
 #define PODER_MAXIMO 100
@@ -473,6 +474,209 @@ void DesenharParticulas(SistemaParticulas *sistema)
 
 // -------------------------------- FIM - FUNÇÕES DO SISTEMA DE LUTA ------------------------------------
 
+// -------------------------------- INICIO - FUNÇÕES DO MENU DE OPÇÕES ---------------------------------
+
+void InicializarConfiguracaoPadrao(ConfiguracaoJogo *config)
+{
+    // Controles padrão Player 1
+    config->teclaPoderP1 = KEY_Q;
+    config->teclaSocoP1 = KEY_E;
+    config->teclaChute1 = KEY_R;
+    config->teclaEsquerdaP1 = KEY_A;
+    config->teclaDireitaP1 = KEY_D;
+    config->teclaConfirmarP1 = KEY_ENTER;
+
+    // Controles padrão Player 2
+    config->teclaPoderP2 = KEY_P;
+    config->teclaSocoP2 = KEY_O;
+    config->teclaChute2 = KEY_I;
+    config->teclaEsquerdaP2 = KEY_LEFT;
+    config->teclaDireitaP2 = KEY_RIGHT;
+    config->teclaConfirmarP2 = KEY_SPACE;
+
+    // Volume padrão
+    config->volumeMusica = 0.5f;
+    config->volumeEfeitos = 0.7f;
+}
+
+const char *ObterNomeTecla(int tecla)
+{
+    switch (tecla)
+    {
+    case KEY_Q:
+        return "Q";
+    case KEY_W:
+        return "W";
+    case KEY_E:
+        return "E";
+    case KEY_R:
+        return "R";
+    case KEY_T:
+        return "T";
+    case KEY_Y:
+        return "Y";
+    case KEY_U:
+        return "U";
+    case KEY_I:
+        return "I";
+    case KEY_O:
+        return "O";
+    case KEY_P:
+        return "P";
+    case KEY_A:
+        return "A";
+    case KEY_S:
+        return "S";
+    case KEY_D:
+        return "D";
+    case KEY_F:
+        return "F";
+    case KEY_G:
+        return "G";
+    case KEY_H:
+        return "H";
+    case KEY_J:
+        return "J";
+    case KEY_K:
+        return "K";
+    case KEY_L:
+        return "L";
+    case KEY_Z:
+        return "Z";
+    case KEY_X:
+        return "X";
+    case KEY_C:
+        return "C";
+    case KEY_V:
+        return "V";
+    case KEY_B:
+        return "B";
+    case KEY_N:
+        return "N";
+    case KEY_M:
+        return "M";
+    case KEY_SPACE:
+        return "SPACE";
+    case KEY_ENTER:
+        return "ENTER";
+    case KEY_LEFT:
+        return "←";
+    case KEY_RIGHT:
+        return "→";
+    case KEY_UP:
+        return "↑";
+    case KEY_DOWN:
+        return "↓";
+    default:
+        return "?";
+    }
+}
+
+void DesenharTelaOpcoes(ConfiguracaoJogo *config, int opcaoSelecionada, bool aguardandoTecla, Font fonte)
+{
+    // Fundo escuro
+    DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, Fade(BLACK, 0.9f));
+
+    // Título
+    const char *titulo = "OPÇÕES";
+    int larguraTitulo = MeasureText(titulo, 60);
+    DrawText(titulo, LARGURA_TELA / 2 - larguraTitulo / 2, 100, 60, WHITE);
+
+    // Opções de configuração
+    const char *opcoes[OPCOES_CONFIG] = {
+        "CONTROLES PLAYER 1",
+        "CONTROLES PLAYER 2",
+        "VOLUME MÚSICA",
+        "VOLUME EFEITOS",
+        "RESETAR CONTROLES",
+        "SALVAR CONFIGURAÇÕES",
+        "CARREGAR CONFIGURAÇÕES",
+        "VOLTAR"};
+
+    int posY = 250;
+    int espacamento = 80;
+
+    for (int i = 0; i < OPCOES_CONFIG; i++)
+    {
+        Color corTexto = (i == opcaoSelecionada) ? YELLOW : WHITE;
+        Color corCaixa = (i == opcaoSelecionada) ? Fade(YELLOW, 0.3f) : Fade(WHITE, 0.1f);
+
+        // Caixa da opção
+        int larguraCaixa = 800;
+        int alturaCaixa = 60;
+        int x = (LARGURA_TELA - larguraCaixa) / 2;
+        int y = posY + i * espacamento - 10;
+
+        DrawRectangleRounded((Rectangle){x, y, larguraCaixa, alturaCaixa}, 0.1f, 10, corCaixa);
+        DrawRectangleRoundedLines((Rectangle){x, y, larguraCaixa, alturaCaixa}, 0.1f, 10, corTexto);
+
+        // Texto da opção
+        DrawText(opcoes[i], x + 20, posY + i * espacamento, 32, corTexto);
+
+        // Valores específicos
+        if (i == 0) // Controles Player 1
+        {
+            const char *controles = TextFormat("Poder:%s Soco:%s Chute:%s",
+                                               ObterNomeTecla(config->teclaPoderP1),
+                                               ObterNomeTecla(config->teclaSocoP1),
+                                               ObterNomeTecla(config->teclaChute1));
+            DrawText(controles, x + 20, posY + i * espacamento + 35, 20, LIGHTGRAY);
+        }
+        else if (i == 1) // Controles Player 2
+        {
+            const char *controles = TextFormat("Poder:%s Soco:%s Chute:%s",
+                                               ObterNomeTecla(config->teclaPoderP2),
+                                               ObterNomeTecla(config->teclaSocoP2),
+                                               ObterNomeTecla(config->teclaChute2));
+            DrawText(controles, x + 20, posY + i * espacamento + 35, 20, LIGHTGRAY);
+        }
+        else if (i == 2) // Volume Música
+        {
+            int barraLargura = 200;
+            int barraX = x + 400;
+            int barraY = posY + i * espacamento + 15;
+
+            // Barra de volume
+            DrawRectangle(barraX, barraY, barraLargura, 20, DARKGRAY);
+            DrawRectangle(barraX, barraY, (int)(barraLargura * config->volumeMusica), 20, GREEN);
+            DrawRectangleLines(barraX, barraY, barraLargura, 20, WHITE);
+
+            const char *volumeTexto = TextFormat("%.0f%%", config->volumeMusica * 100);
+            DrawText(volumeTexto, barraX + barraLargura + 10, barraY, 20, WHITE);
+        }
+        else if (i == 3) // Volume Efeitos
+        {
+            int barraLargura = 200;
+            int barraX = x + 400;
+            int barraY = posY + i * espacamento + 15;
+
+            // Barra de volume
+            DrawRectangle(barraX, barraY, barraLargura, 20, DARKGRAY);
+            DrawRectangle(barraX, barraY, (int)(barraLargura * config->volumeEfeitos), 20, BLUE);
+            DrawRectangleLines(barraX, barraY, barraLargura, 20, WHITE);
+
+            const char *volumeTexto = TextFormat("%.0f%%", config->volumeEfeitos * 100);
+            DrawText(volumeTexto, barraX + barraLargura + 10, barraY, 20, WHITE);
+        }
+    }
+
+    // Instruções
+    if (aguardandoTecla)
+    {
+        const char *instrucao = "PRESSIONE UMA TECLA PARA CONFIGURAR...";
+        int larguraInstrucao = MeasureText(instrucao, 24);
+        DrawText(instrucao, LARGURA_TELA / 2 - larguraInstrucao / 2, ALTURA_TELA - 100, 24, YELLOW);
+    }
+    else
+    {
+        const char *instrucoes = "↑/↓: Navegar | ENTER: Selecionar | ←/→: Ajustar Volume | BACKSPACE: Voltar";
+        int larguraInstrucoes = MeasureText(instrucoes, 20);
+        DrawText(instrucoes, LARGURA_TELA / 2 - larguraInstrucoes / 2, ALTURA_TELA - 80, 20, LIGHTGRAY);
+    }
+}
+
+// -------------------------------- FIM - FUNÇÕES DO MENU DE OPÇÕES ------------------------------------
+
 int main(void)
 {
     InitWindow(LARGURA_TELA, ALTURA_TELA, "UNI FIGHT - Jogo de Luta");
@@ -484,11 +688,24 @@ int main(void)
     Texture2D fundoSelecao = LoadTexture("./fundo.png");
     Texture2D logo = LoadTexture("./logoUnifight3.png");
 
+    // Carregar música de fundo
+    Music musicaFundo = LoadMusicStream("musicas/menu_background.mp3");
+    PlayMusicStream(musicaFundo);
+
     // Carregar sons (placeholder - você pode adicionar arquivos de som)
     // Sons sons = {0};
     // sons.somSoco = LoadSound("sons/soco.wav");
     // sons.somChute = LoadSound("sons/chute.wav");
     // sons.somPoder = LoadSound("sons/poder.wav");
+
+    // Configurações do jogo
+    ConfiguracaoJogo config = {0};
+    InicializarConfiguracaoPadrao(&config);
+
+    // Variáveis do menu de opções
+    int opcaoSelecionada = 0;
+    bool aguardandoTecla = false;
+    int teclaParaConfigurar = -1; // 0-5 para as 6 teclas configuráveis
 
     OpcaoMenu menu[OPCOES_MENU] = {
         {"JOGAR", 600},
@@ -566,6 +783,10 @@ int main(void)
 
     while (!WindowShouldClose())
     {
+        // Atualizar música de fundo
+        UpdateMusicStream(musicaFundo);
+        SetMusicVolume(musicaFundo, config.volumeMusica);
+
         if (telaAtual == TELA_MENU)
         {
             if (IsKeyPressed(KEY_DOWN))
@@ -581,11 +802,115 @@ int main(void)
                 }
                 else if (menuSelecionado == 1)
                 {
-                    // Tela de opções (não implementada)
+                    telaAtual = TELA_OPCOES;
+                    opcaoSelecionada = 0;
                 }
                 else if (menuSelecionado == 2)
                 {
                     break;
+                }
+            }
+        }
+        else if (telaAtual == TELA_OPCOES)
+        {
+            if (!aguardandoTecla)
+            {
+                // Navegação no menu de opções
+                if (IsKeyPressed(KEY_DOWN))
+                    opcaoSelecionada = (opcaoSelecionada + 1) % OPCOES_CONFIG;
+                if (IsKeyPressed(KEY_UP))
+                    opcaoSelecionada = (opcaoSelecionada - 1 + OPCOES_CONFIG) % OPCOES_CONFIG;
+
+                // Ajustar volume com setas
+                if (opcaoSelecionada == 2) // Volume Música
+                {
+                    if (IsKeyPressed(KEY_LEFT))
+                        config.volumeMusica = fmaxf(0.0f, config.volumeMusica - 0.1f);
+                    if (IsKeyPressed(KEY_RIGHT))
+                        config.volumeMusica = fminf(1.0f, config.volumeMusica + 0.1f);
+                }
+                else if (opcaoSelecionada == 3) // Volume Efeitos
+                {
+                    if (IsKeyPressed(KEY_LEFT))
+                        config.volumeEfeitos = fmaxf(0.0f, config.volumeEfeitos - 0.1f);
+                    if (IsKeyPressed(KEY_RIGHT))
+                        config.volumeEfeitos = fminf(1.0f, config.volumeEfeitos + 0.1f);
+                }
+
+                // Selecionar opção
+                if (IsKeyPressed(KEY_ENTER))
+                {
+                    if (opcaoSelecionada == 0) // Controles Player 1
+                    {
+                        aguardandoTecla = true;
+                        teclaParaConfigurar = 0; // Começar com poder P1
+                    }
+                    else if (opcaoSelecionada == 1) // Controles Player 2
+                    {
+                        aguardandoTecla = true;
+                        teclaParaConfigurar = 3; // Começar com poder P2
+                    }
+                    else if (opcaoSelecionada == 4) // Resetar controles
+                    {
+                        InicializarConfiguracaoPadrao(&config);
+                    }
+                    else if (opcaoSelecionada == 7) // Voltar
+                    {
+                        telaAtual = TELA_MENU;
+                    }
+                }
+
+                // Voltar ao menu
+                if (IsKeyPressed(KEY_BACKSPACE))
+                {
+                    telaAtual = TELA_MENU;
+                }
+            }
+            else
+            {
+                // Aguardando configuração de tecla
+                int tecla = GetKeyPressed();
+                if (tecla != 0)
+                {
+                    // Configurar a tecla baseada no índice
+                    switch (teclaParaConfigurar)
+                    {
+                    case 0:
+                        config.teclaPoderP1 = tecla;
+                        break;
+                    case 1:
+                        config.teclaSocoP1 = tecla;
+                        break;
+                    case 2:
+                        config.teclaChute1 = tecla;
+                        break;
+                    case 3:
+                        config.teclaPoderP2 = tecla;
+                        break;
+                    case 4:
+                        config.teclaSocoP2 = tecla;
+                        break;
+                    case 5:
+                        config.teclaChute2 = tecla;
+                        break;
+                    }
+
+                    teclaParaConfigurar++;
+
+                    // Se configurou todas as teclas do player atual, parar
+                    if ((teclaParaConfigurar == 3 && opcaoSelecionada == 0) ||
+                        (teclaParaConfigurar == 6 && opcaoSelecionada == 1))
+                    {
+                        aguardandoTecla = false;
+                        teclaParaConfigurar = -1;
+                    }
+                }
+
+                // Cancelar configuração
+                if (IsKeyPressed(KEY_ESCAPE))
+                {
+                    aguardandoTecla = false;
+                    teclaParaConfigurar = -1;
                 }
             }
         }
@@ -695,8 +1020,8 @@ int main(void)
             if (estado.tremor > 0)
                 estado.tremor -= GetFrameTime() * 5.0f;
 
-            // Controles de luta Player 1 (WASD + Q para poder)
-            if (IsKeyPressed(KEY_Q) && estado.jogador1->poderAtual >= 50 && !estado.jogador1->animando)
+            // Controles de luta Player 1 (configuráveis)
+            if (IsKeyPressed(config.teclaPoderP1) && estado.jogador1->poderAtual >= 50 && !estado.jogador1->animando)
             {
                 estado.jogador2->vidaAtual -= estado.jogador1->danoPoder;
                 estado.jogador1->poderAtual -= 50;
@@ -710,7 +1035,7 @@ int main(void)
                 estado.tremor = 0.2f;
                 // PlaySound(sons.somPoder);
             }
-            if (IsKeyPressed(KEY_E) && !estado.jogador1->animando)
+            if (IsKeyPressed(config.teclaSocoP1) && !estado.jogador1->animando)
             {
                 estado.jogador2->vidaAtual -= estado.jogador1->danoSoco;
                 estado.jogador1->poderAtual += 10;
@@ -723,7 +1048,7 @@ int main(void)
                 estado.tremor = 0.1f;
                 // PlaySound(sons.somSoco);
             }
-            if (IsKeyPressed(KEY_R) && !estado.jogador1->animando)
+            if (IsKeyPressed(config.teclaChute1) && !estado.jogador1->animando)
             {
                 estado.jogador2->vidaAtual -= estado.jogador1->danoChute;
                 estado.jogador1->poderAtual += 15;
@@ -737,8 +1062,8 @@ int main(void)
                 // PlaySound(sons.somChute);
             }
 
-            // Controles de luta Player 2 (Setas + P para poder)
-            if (IsKeyPressed(KEY_P) && estado.jogador2->poderAtual >= 50 && !estado.jogador2->animando)
+            // Controles de luta Player 2 (configuráveis)
+            if (IsKeyPressed(config.teclaPoderP2) && estado.jogador2->poderAtual >= 50 && !estado.jogador2->animando)
             {
                 estado.jogador1->vidaAtual -= estado.jogador2->danoPoder;
                 estado.jogador2->poderAtual -= 50;
@@ -752,7 +1077,7 @@ int main(void)
                 estado.tremor = 0.2f;
                 // PlaySound(sons.somPoder);
             }
-            if (IsKeyPressed(KEY_O) && !estado.jogador2->animando)
+            if (IsKeyPressed(config.teclaSocoP2) && !estado.jogador2->animando)
             {
                 estado.jogador1->vidaAtual -= estado.jogador2->danoSoco;
                 estado.jogador2->poderAtual += 10;
@@ -765,7 +1090,7 @@ int main(void)
                 estado.tremor = 0.1f;
                 // PlaySound(sons.somSoco);
             }
-            if (IsKeyPressed(KEY_I) && !estado.jogador2->animando)
+            if (IsKeyPressed(config.teclaChute2) && !estado.jogador2->animando)
             {
                 estado.jogador1->vidaAtual -= estado.jogador2->danoChute;
                 estado.jogador2->poderAtual += 15;
@@ -844,6 +1169,10 @@ int main(void)
                 Vector2 tamTexto = MeasureTextEx(fontePixel, texto, tamanhoFonte, 1);
                 DrawTextEx(fontePixel, texto, (Vector2){(LARGURA_TELA - tamTexto.x) / 2, menu[i].posY}, tamanhoFonte, 1, corTexto);
             }
+        }
+        else if (telaAtual == TELA_OPCOES)
+        {
+            DesenharTelaOpcoes(&config, opcaoSelecionada, aguardandoTecla, fontePixel);
         }
         else if (telaAtual == TELA_SELECAO)
         {
@@ -1094,9 +1423,18 @@ int main(void)
                 DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, corFlash);
             }
 
-            // Controles de luta
-            DrawText("Player 1: Q=Poder, E=Soco, R=Chute", 50, ALTURA_TELA - 80, 18, BLUE);
-            DrawText("Player 2: P=Poder, O=Soco, I=Chute", 50, ALTURA_TELA - 60, 18, RED);
+            // Controles de luta (dinâmicos baseados na configuração)
+            const char *controlesP1 = TextFormat("Player 1: %s=Poder, %s=Soco, %s=Chute",
+                                                 ObterNomeTecla(config.teclaPoderP1),
+                                                 ObterNomeTecla(config.teclaSocoP1),
+                                                 ObterNomeTecla(config.teclaChute1));
+            DrawText(controlesP1, 50, ALTURA_TELA - 80, 18, BLUE);
+
+            const char *controlesP2 = TextFormat("Player 2: %s=Poder, %s=Soco, %s=Chute",
+                                                 ObterNomeTecla(config.teclaPoderP2),
+                                                 ObterNomeTecla(config.teclaSocoP2),
+                                                 ObterNomeTecla(config.teclaChute2));
+            DrawText(controlesP2, 50, ALTURA_TELA - 60, 18, RED);
             DrawText("ESC: Voltar ao menu", 50, ALTURA_TELA - 40, 18, WHITE);
         }
 
@@ -1126,6 +1464,7 @@ int main(void)
     UnloadFont(fontePixel);
 
     // Cleanup áudio
+    UnloadMusicStream(musicaFundo);
     CloseAudioDevice();
 
     CloseWindow();

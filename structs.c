@@ -103,7 +103,31 @@ typedef struct
 typedef enum
 {
     TELA_MENU,
+    TELA_OPCOES,
     TELA_SELECAO,
     TELA_SELECAO_MAPA,
     TELA_LUTA
 } Tela;
+
+typedef struct
+{
+    // Controles Player 1
+    int teclaPoderP1;
+    int teclaSocoP1;
+    int teclaChute1;
+    int teclaEsquerdaP1;
+    int teclaDireitaP1;
+    int teclaConfirmarP1;
+
+    // Controles Player 2
+    int teclaPoderP2;
+    int teclaSocoP2;
+    int teclaChute2;
+    int teclaEsquerdaP2;
+    int teclaDireitaP2;
+    int teclaConfirmarP2;
+
+    // Volume
+    float volumeMusica;
+    float volumeEfeitos;
+} ConfiguracaoJogo;

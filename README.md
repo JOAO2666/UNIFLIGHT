@@ -98,6 +98,35 @@ Exemplo: joao_soco.png, Dandara_chute.png
 
 Para documentação completa, consulte `ANIMACOES.md`
 
+### 🎛️ Sistema de Opções Completo
+Implementado menu de configurações avançado com controles personalizáveis:
+
+#### Configuração de Controles:
+- **Player 1**: Q/E/R (padrão) → Totalmente configurável
+- **Player 2**: P/O/I (padrão) → Totalmente configurável
+- **Processo Guiado**: Configure 3 teclas em sequência
+- **Reset**: Restaurar controles padrão a qualquer momento
+
+#### Controle de Volume:
+- **Música de Fundo**: 0-100% com barra visual
+- **Efeitos Sonoros**: 0-100% (preparado para implementação)
+- **Ajuste em Tempo Real**: Setas ←/→ para controlar
+- **Feedback Visual**: Barras de progresso + porcentagem
+
+#### Música de Fundo:
+- **Arquivo**: `musicas/menu_background.mp3`
+- **Tipo**: Música calma e relaxante
+- **Volume**: Controlável via menu de opções
+- **Loop Contínuo**: Durante toda a experiência de jogo
+
+#### Interface de Opções:
+- **Navegação**: ↑/↓ para navegar, ENTER para selecionar
+- **Controles Dinâmicos**: Tela de luta mostra teclas configuradas
+- **Cancelamento**: ESC para cancelar configurações
+- **Voltar**: BACKSPACE para retornar ao menu
+
+Para documentação completa, consulte `MENU_OPCOES.md`
+
 ## Como Executar
 1. Abra o `unifight.c` no **Notepad++ for Raylib**
 2. Pressione `F5` ou clique em "Run" para executar o jogo
