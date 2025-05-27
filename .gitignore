@@ -1,0 +1,41 @@
+# Executáveis
+*.exe
+*.out
+*.app
+
+# Arquivos de objeto
+*.o
+*.obj
+
+# Arquivos temporários
+*.tmp
+*.temp
+*~
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Arquivos de backup
+*.bak
+*.backup
+
+# Arquivos do Visual Studio Code
+.vscode/
+
+# Arquivos do Dev-C++
+*.dev
+*.layout
+
+# Arquivos do Code::Blocks
+*.cbp
+*.depend
+*.layout
+
+# Pasta de build (se houver)
+build/
+bin/
+obj/ 
