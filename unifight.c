@@ -10,12 +10,378 @@
 #define OPCOES_MENU 3
 #define OPCOES_CONFIG 8
 #define MAX_MAPAS 6
-#define VIDA_MAXIMA 100
+#define VIDA_MAXIMA 250
 #define PODER_MAXIMO 100
+
 #define TEMPO_ROUND 60.0f
 #define MAX_ROUNDS 3
 
-// -------------------------------- INICIO - PARTE QUE DESENHA A TELA DE SELEÇÃO DOS PERSONAGENS (DE UM PLAYER SÓ) ---------------------------------
+// ===== FUNÇÕES DE MOVIMENTO E SPRITES =====
+
+void InicializarPosicaoPersonagem(Personagem *p, float x, float y, bool viradoDireita)
+{
+    p->posicao.x = x;
+    p->posicao.y = y;
+    p->velocidade.x = 0;
+    p->velocidade.y = 0;
+    p->velocidadeMaxima = 200.0f;
+    p->viradoParaDireita = viradoDireita;
+    p->podeAtacar = true;
+    p->podeSeMovimentar = true;
+
+    // Configurar hitbox
+    p->hitbox.width = 80;
+    p->hitbox.height = 120;
+    p->hitbox.x = p->posicao.x - p->hitbox.width / 2;
+    p->hitbox.y = p->posicao.y - p->hitbox.height;
+
+    // Configurar alcances de ataque
+    p->alcanceSoco = 90.0f;
+    p->alcanceChute = 110.0f;
+    p->alcancePoder = 150.0f;
+
+    // Sistema de sprites melhorado
+    p->frameAtual = 0;
+    p->totalFrames = 4;
+    p->timerFrame = 0.0f;
+    p->duracaoFrame = 0.12f;                    // Animação mais rápida
+    p->frameSource = (Rectangle){0, 0, 64, 64}; // Tamanho padrão do frame
+}
+
+void AtualizarHitbox(Personagem *p)
+{
+    p->hitbox.x = p->posicao.x - p->hitbox.width / 2;
+    p->hitbox.y = p->posicao.y - p->hitbox.height;
+}
+
+void AtualizarAlcanceAtaque(Personagem *p)
+{
+    float alcance = 0;
+    switch (p->poseAtual)
+    {
+    case POSE_SOCO:
+        alcance = p->alcanceSoco;
+        break;
+    case POSE_CHUTE:
+        alcance = p->alcanceChute;
+        break;
+    case POSE_PODER:
+        alcance = p->alcancePoder;
+        break;
+    default:
+        alcance = 0;
+        break;
+    }
+
+    if (p->viradoParaDireita)
+    {
+        p->alcanceAtaque.x = p->posicao.x;
+        p->alcanceAtaque.y = p->posicao.y - 60;
+        p->alcanceAtaque.width = alcance;
+        p->alcanceAtaque.height = 80;
+    }
+    else
+    {
+        p->alcanceAtaque.x = p->posicao.x - alcance;
+        p->alcanceAtaque.y = p->posicao.y - 60;
+        p->alcanceAtaque.width = alcance;
+        p->alcanceAtaque.height = 80;
+    }
+}
+
+bool VerificarProximidade(Personagem *atacante, Personagem *alvo)
+{
+    AtualizarAlcanceAtaque(atacante);
+    return CheckCollisionRecs(atacante->alcanceAtaque, alvo->hitbox);
+}
+
+void MoverPersonagem(Personagem *p, float deltaTime, float limiteEsquerdo, float limiteDireito)
+{
+    if (!p->podeSeMovimentar || p->animando)
+        return;
+
+    // Aplicar movimento
+    p->posicao.x += p->velocidade.x * deltaTime;
+
+    // Verificar limites da arena
+    if (p->posicao.x < limiteEsquerdo + p->hitbox.width / 2)
+    {
+        p->posicao.x = limiteEsquerdo + p->hitbox.width / 2;
+        p->velocidade.x = 0;
+    }
+    if (p->posicao.x > limiteDireito - p->hitbox.width / 2)
+    {
+        p->posicao.x = limiteDireito - p->hitbox.width / 2;
+        p->velocidade.x = 0;
+    }
+
+    // Atualizar hitbox
+    AtualizarHitbox(p);
+
+    // Determinar direção que está virado
+    if (p->velocidade.x > 0)
+        p->viradoParaDireita = true;
+    else if (p->velocidade.x < 0)
+        p->viradoParaDireita = false;
+}
+
+void ProcessarMovimentoPlayer1(Personagem *p, ConfiguracaoJogo *config)
+{
+    if (!p->podeSeMovimentar || p->animando)
+        return;
+
+    p->velocidade.x = 0;
+    bool movendo = false;
+
+    // Movimento mais responsivo estilo Street Fighter
+    if (IsKeyDown(config->teclaEsquerdaP1))
+    {
+        p->velocidade.x = -p->velocidadeMaxima;
+        movendo = true;
+    }
+    else if (IsKeyDown(config->teclaDireitaP1))
+    {
+        p->velocidade.x = p->velocidadeMaxima;
+        movendo = true;
+    }
+
+    // Atualizar pose baseada no movimento
+    if (movendo && p->poseAtual == POSE_IDLE)
+    {
+        p->poseAtual = POSE_WALK;
+    }
+    else if (!movendo && p->poseAtual == POSE_WALK && !p->animando)
+    {
+        p->poseAtual = POSE_IDLE;
+    }
+}
+
+void ProcessarMovimentoPlayer2(Personagem *p, ConfiguracaoJogo *config)
+{
+    if (!p->podeSeMovimentar || p->animando)
+        return;
+
+    p->velocidade.x = 0;
+    bool movendo = false;
+
+    // Movimento mais responsivo estilo Street Fighter
+    if (IsKeyDown(config->teclaEsquerdaP2))
+    {
+        p->velocidade.x = -p->velocidadeMaxima;
+        movendo = true;
+    }
+    else if (IsKeyDown(config->teclaDireitaP2))
+    {
+        p->velocidade.x = p->velocidadeMaxima;
+        movendo = true;
+    }
+
+    // Atualizar pose baseada no movimento
+    if (movendo && p->poseAtual == POSE_IDLE)
+    {
+        p->poseAtual = POSE_WALK;
+    }
+    else if (!movendo && p->poseAtual == POSE_WALK && !p->animando)
+    {
+        p->poseAtual = POSE_IDLE;
+    }
+}
+
+void AtualizarAnimacaoSprite(Personagem *p, float deltaTime)
+{
+    // Atualizar timer do frame
+    p->timerFrame += deltaTime;
+
+    if (p->timerFrame >= p->duracaoFrame)
+    {
+        p->timerFrame = 0.0f;
+        p->frameAtual++;
+
+        // Configurar frames por pose com animações mais suaves
+        int maxFrames = 1;
+        switch (p->poseAtual)
+        {
+        case POSE_IDLE:
+            maxFrames = 4; // Respiração suave
+            p->duracaoFrame = 0.25f;
+            break;
+        case POSE_WALK:
+            maxFrames = 6; // Caminhada fluida
+            p->duracaoFrame = 0.15f;
+            break;
+        case POSE_SOCO:
+            maxFrames = 4; // Soco rápido
+            p->duracaoFrame = 0.08f;
+            break;
+        case POSE_CHUTE:
+            maxFrames = 5; // Chute com preparação
+            p->duracaoFrame = 0.1f;
+            break;
+        case POSE_PODER:
+            maxFrames = 8; // Poder especial elaborado
+            p->duracaoFrame = 0.12f;
+            break;
+        case POSE_DANO:
+            maxFrames = 3; // Reação ao dano
+            p->duracaoFrame = 0.15f;
+            break;
+        case POSE_DEFESA:
+            maxFrames = 2; // Posição defensiva
+            p->duracaoFrame = 0.2f;
+            break;
+        }
+
+        if (p->frameAtual >= maxFrames)
+        {
+            p->frameAtual = 0;
+
+            // Se é uma animação de ataque, voltar ao idle
+            if (p->animando && (p->poseAtual == POSE_SOCO || p->poseAtual == POSE_CHUTE ||
+                                p->poseAtual == POSE_PODER || p->poseAtual == POSE_DANO))
+            {
+                // A animação será finalizada pela função AtualizarAnimacao
+            }
+        }
+    }
+
+    // Configurar source rectangle para sprite
+    int frameWidth = 64;
+    int frameHeight = 64;
+
+    p->frameSource.x = p->frameAtual * frameWidth;
+    p->frameSource.y = (int)p->poseAtual * frameHeight;
+    p->frameSource.width = frameWidth;
+    p->frameSource.height = frameHeight;
+}
+
+Texture2D ObterTexturaAtual(Personagem *p)
+{
+    switch (p->poseAtual)
+    {
+    case POSE_WALK:
+        return p->texturaWalk.id > 0 ? p->texturaWalk : p->texturaLuta;
+    case POSE_SOCO:
+        return p->texturaSoco.id > 0 ? p->texturaSoco : p->texturaLuta;
+    case POSE_CHUTE:
+        return p->texturaChute.id > 0 ? p->texturaChute : p->texturaLuta;
+    case POSE_PODER:
+        return p->texturaPoder.id > 0 ? p->texturaPoder : p->texturaLuta;
+    case POSE_DEFESA:
+        return p->texturaDefesa.id > 0 ? p->texturaDefesa : p->texturaLuta;
+    case POSE_DANO:
+        return p->texturaDano.id > 0 ? p->texturaDano : p->texturaLuta;
+    case POSE_IDLE:
+    default:
+        return p->texturaLuta;
+    }
+}
+
+void IniciarAnimacao(Personagem *p, TipoPose pose, float duracao)
+{
+    p->poseAtual = pose;
+    p->timerAnimacao = 0.0f;
+    p->duracaoAnimacao = duracao;
+    p->animando = true;
+    p->frameAtual = 0; // Resetar frame para início da animação
+    p->timerFrame = 0.0f;
+
+    // Bloquear movimento durante ataques
+    if (pose == POSE_SOCO || pose == POSE_CHUTE || pose == POSE_PODER)
+    {
+        p->podeSeMovimentar = false;
+        p->podeAtacar = false;
+    }
+}
+
+void AtualizarAnimacao(Personagem *p, float deltaTime)
+{
+    if (p->animando)
+    {
+        p->timerAnimacao += deltaTime;
+        if (p->timerAnimacao >= p->duracaoAnimacao)
+        {
+            p->poseAtual = POSE_IDLE;
+            p->animando = false;
+            p->timerAnimacao = 0.0f;
+            p->frameAtual = 0;
+            p->timerFrame = 0.0f;
+
+            // Restaurar capacidades
+            p->podeSeMovimentar = true;
+            p->podeAtacar = true;
+        }
+    }
+}
+
+Rectangle ObterSourceRectSprite(Personagem *p)
+{
+    return p->frameSource;
+}
+
+void VirarPersonagemParaOponente(Personagem *p1, Personagem *p2)
+{
+    // Só virar se não estiver atacando
+    if (!p1->animando || (p1->poseAtual != POSE_SOCO && p1->poseAtual != POSE_CHUTE && p1->poseAtual != POSE_PODER))
+    {
+        if (p2->posicao.x > p1->posicao.x)
+            p1->viradoParaDireita = true;
+        else
+            p1->viradoParaDireita = false;
+    }
+
+    if (!p2->animando || (p2->poseAtual != POSE_SOCO && p2->poseAtual != POSE_CHUTE && p2->poseAtual != POSE_PODER))
+    {
+        if (p1->posicao.x > p2->posicao.x)
+            p2->viradoParaDireita = true;
+        else
+            p2->viradoParaDireita = false;
+    }
+}
+
+bool ExecutarAtaque(Personagem *atacante, Personagem *alvo, TipoPose tipoAtaque, int dano)
+{
+    if (!atacante->podeAtacar || atacante->animando)
+        return false;
+
+    // Verificar se está próximo o suficiente
+    if (!VerificarProximidade(atacante, alvo))
+        return false;
+
+    // Executar ataque
+    alvo->vidaAtual -= dano;
+    if (alvo->vidaAtual < 0)
+        alvo->vidaAtual = 0;
+
+    // Iniciar animações
+    float duracaoAtaque = 0.4f;
+    if (tipoAtaque == POSE_SOCO)
+        duracaoAtaque = 0.3f;
+    else if (tipoAtaque == POSE_CHUTE)
+        duracaoAtaque = 0.5f;
+    else if (tipoAtaque == POSE_PODER)
+        duracaoAtaque = 0.8f;
+
+    IniciarAnimacao(atacante, tipoAtaque, duracaoAtaque);
+    IniciarAnimacao(alvo, POSE_DANO, 0.3f);
+
+    // Empurrar o alvo para trás
+    float forcaEmpurrao = 30.0f;
+    if (tipoAtaque == POSE_CHUTE)
+        forcaEmpurrao = 45.0f;
+    else if (tipoAtaque == POSE_PODER)
+        forcaEmpurrao = 60.0f;
+
+    if (atacante->viradoParaDireita)
+    {
+        alvo->posicao.x += forcaEmpurrao;
+    }
+    else
+    {
+        alvo->posicao.x -= forcaEmpurrao;
+    }
+
+    return true;
+}
 
 void DesenharSelecaoPersonagem(Personagem personagens[], int selecionado, int inicioX, int inicioY, int larguraArea, int alturaArea, Color corDestaque)
 {
@@ -59,47 +425,42 @@ void DesenharSelecaoPersonagem(Personagem personagens[], int selecionado, int in
     }
 }
 
-// -------------------------------- FIM - PARTE QUE DESENHA A TELA DE SELEÇÃO DOS PERSONAGENS (DE UM PLAYER SÓ) ------------------------------------
-
-// -------------------------------- INICIO - FUNÇÃO PARA DESENHAR INFORMAÇÕES DO PERSONAGEM ---------------------------------
-
 void DesenharInfoPersonagem(Personagem personagem, int x, int y, int largura, int altura, Font fonte)
 {
-    // Fundo para as informações
-    DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.1f, 10, Fade(BLACK, 0.8f));
+    // Painel de fundo com gradiente
+    DrawRectangleRounded((Rectangle){x, y, largura, altura}, 0.1f, 10, Fade(BLACK, 0.85f));
     DrawRectangleRoundedLines((Rectangle){x, y, largura, altura}, 0.1f, 10, personagem.corHabilidade);
 
-    int posY = y + 20;
-    int espacamento = 35;
+    int posY = y + 25;
+    int espacamento = 45;
 
-    // Nome do personagem
-    DrawTextEx(fonte, personagem.nome, (Vector2){x + 20, posY}, 32, 1, WHITE);
-    posY += espacamento + 10;
+    // Nome do personagem com fonte ainda maior
+    DrawTextEx(fonte, personagem.nome, (Vector2){x + 25, posY}, 42, 2, WHITE);
+    posY += espacamento + 20;
 
-    // Habilidade
+    // Habilidade com fonte maior e melhor destaque
     const char *habilidadeTexto = TextFormat("Habilidade: %s", personagem.habilidade);
-    DrawTextEx(fonte, habilidadeTexto, (Vector2){x + 20, posY}, 24, 1, personagem.corHabilidade);
+    DrawTextEx(fonte, habilidadeTexto, (Vector2){x + 25, posY}, 32, 2, personagem.corHabilidade);
     posY += espacamento;
 
-    // História (quebrada em linhas)
+    // História com fonte maior
     const char *historiaTexto = "História:";
-    DrawTextEx(fonte, historiaTexto, (Vector2){x + 20, posY}, 20, 1, LIGHTGRAY);
-    posY += 25;
+    DrawTextEx(fonte, historiaTexto, (Vector2){x + 25, posY}, 28, 2, LIGHTGRAY);
+    posY += 35;
 
-    // Quebrar texto da história em múltiplas linhas
-    int larguraTexto = largura - 40;
+    // Texto da história com fonte maior e melhor formatação
+    int larguraTexto = largura - 50;
     const char *historia = personagem.historia;
-    int tamanhoFonte = 16;
+    int tamanhoFonte = 24; // Aumentado de 20 para 24
 
-    // Simular quebra de linha manual
-    char linha[200];
+    char linha[250]; // Aumentado o buffer
     int posicao = 0;
-    int caracteresPorLinha = (larguraTexto / (tamanhoFonte * 0.6f));
+    int caracteresPorLinha = (larguraTexto / (tamanhoFonte * 0.55f)); // Ajustado para fonte maior
 
     if (caracteresPorLinha <= 0)
-        caracteresPorLinha = 20; // Valor mínimo seguro
+        caracteresPorLinha = 25; // Aumentado
 
-    while (historia[posicao] != '\0' && posY < y + altura - 30)
+    while (historia[posicao] != '\0' && posY < y + altura - 35)
     {
         int fim = posicao + caracteresPorLinha;
         int tamanhoHistoria = strlen(historia);
@@ -110,21 +471,32 @@ void DesenharInfoPersonagem(Personagem personagem, int x, int y, int largura, in
         }
         else
         {
-            // Procurar o último espaço para quebra de palavra
-            while (fim > posicao && historia[fim] != ' ')
+            // Procurar quebra de palavra mais inteligente
+            while (fim > posicao && historia[fim] != ' ' && historia[fim] != '.' && historia[fim] != ',')
             {
                 fim--;
+            }
+            // Se não encontrou espaço, quebra na palavra mesmo
+            if (fim == posicao)
+            {
+                fim = posicao + caracteresPorLinha;
             }
         }
 
         int tamanho = fim - posicao;
-        if (tamanho > 0 && tamanho < 199) // Verificar limites do array
+        if (tamanho > 0 && tamanho < 249)
         {
             strncpy(linha, &historia[posicao], tamanho);
             linha[tamanho] = '\0';
-            DrawTextEx(fonte, linha, (Vector2){x + 20, posY}, tamanhoFonte, 1, WHITE);
-            posY += 20;
-            posicao = (fim < tamanhoHistoria && historia[fim] == ' ') ? fim + 1 : fim;
+
+            // Remover espaços no início da linha
+            char *linhaLimpa = linha;
+            while (*linhaLimpa == ' ')
+                linhaLimpa++;
+
+            DrawTextEx(fonte, linhaLimpa, (Vector2){x + 25, posY}, tamanhoFonte, 2, WHITE);
+            posY += 30; // Aumentado o espaçamento entre linhas
+            posicao = (fim < tamanhoHistoria && (historia[fim] == ' ' || historia[fim] == '.' || historia[fim] == ',')) ? fim + 1 : fim;
         }
         else
         {
@@ -133,26 +505,33 @@ void DesenharInfoPersonagem(Personagem personagem, int x, int y, int largura, in
     }
 }
 
-// -------------------------------- FIM - FUNÇÃO PARA DESENHAR INFORMAÇÕES DO PERSONAGEM ------------------------------------
-
-// -------------------------------- INICIO - FUNÇÕES DO SISTEMA DE LUTA ---------------------------------
-
 void DesenharBarraVida(int x, int y, int largura, int altura, int vidaAtual, int vidaMaxima, Color cor)
 {
     // Fundo da barra
     DrawRectangle(x, y, largura, altura, DARKGRAY);
 
-    // Barra de vida
+    // Barra de vida com gradiente
     float porcentagem = (float)vidaAtual / (float)vidaMaxima;
     int larguraVida = (int)(largura * porcentagem);
-    DrawRectangle(x, y, larguraVida, altura, cor);
+
+    // Cor da vida baseada na porcentagem
+    Color corVida = cor;
+    if (porcentagem < 0.3f)
+        corVida = RED;
+    else if (porcentagem < 0.6f)
+        corVida = ORANGE;
+    else
+        corVida = GREEN;
+
+    DrawRectangle(x, y, larguraVida, altura, corVida);
 
     // Borda
     DrawRectangleLines(x, y, largura, altura, WHITE);
 
-    // Texto
+    // Texto da vida
     const char *textoVida = TextFormat("%d/%d", vidaAtual, vidaMaxima);
-    DrawText(textoVida, x + largura / 2 - MeasureText(textoVida, 20) / 2, y + altura / 2 - 10, 20, WHITE);
+    int larguraTexto = MeasureText(textoVida, 20);
+    DrawText(textoVida, x + largura / 2 - larguraTexto / 2, y + altura / 2 - 10, 20, WHITE);
 }
 
 void DesenharBarraPoder(int x, int y, int largura, int altura, int poderAtual, int poderMaximo)
@@ -160,53 +539,77 @@ void DesenharBarraPoder(int x, int y, int largura, int altura, int poderAtual, i
     // Fundo da barra
     DrawRectangle(x, y, largura, altura, DARKGRAY);
 
-    // Barra de poder
+    // Barra de poder com efeito brilhante
     float porcentagem = (float)poderAtual / (float)poderMaximo;
     int larguraPoder = (int)(largura * porcentagem);
-    DrawRectangle(x, y, larguraPoder, altura, BLUE);
+
+    // Cor do poder com efeito pulsante
+    Color corPoder = BLUE;
+    if (poderAtual >= 50) // Pode usar poder especial
+    {
+        float pulso = 0.7f + 0.3f * sin(GetTime() * 8);
+        corPoder = ColorLerp(BLUE, YELLOW, pulso);
+    }
+
+    DrawRectangle(x, y, larguraPoder, altura, corPoder);
+
+    // Linha indicadora dos 50 pontos (metade da barra)
+    int linhaMeio = x + largura / 2;
+    DrawLine(linhaMeio, y, linhaMeio, y + altura, WHITE);
 
     // Borda
     DrawRectangleLines(x, y, largura, altura, WHITE);
 
-    // Texto
+    // Texto do poder
     const char *textoPoder = TextFormat("%d/%d", poderAtual, poderMaximo);
-    DrawText(textoPoder, x + largura / 2 - MeasureText(textoPoder, 16) / 2, y + altura / 2 - 8, 16, WHITE);
+    int larguraTexto = MeasureText(textoPoder, 16);
+    DrawText(textoPoder, x + largura / 2 - larguraTexto / 2, y + altura / 2 - 8, 16, WHITE);
+
+    // Indicador de poder especial disponível
+    if (poderAtual >= 50)
+    {
+        const char *textoEspecial = "ESPECIAL!";
+        DrawText(textoEspecial, x + largura + 10, y + altura / 2 - 8, 16, YELLOW);
+    }
 }
 
 void DesenharHUD(EstadoJogo *estado, Font fonte)
 {
-    // HUD Player 1
-    DrawText(estado->jogador1->nome, 50, 50, 32, BLUE);
-    DrawText("VIDA:", 50, 90, 20, WHITE);
+    // Verificar se os jogadores existem
+    if (!estado->jogador1 || !estado->jogador2)
+        return;
+
+    // Player 1 HUD (lado esquerdo)
+    DrawTextEx(fonte, estado->jogador1->nome, (Vector2){50, 50}, 36, 2, BLUE);
+    DrawTextEx(fonte, "VIDA:", (Vector2){50, 90}, 24, 2, WHITE);
     DesenharBarraVida(120, 90, 300, 25, estado->jogador1->vidaAtual, estado->jogador1->vidaMaxima, RED);
-    DrawText("PODER:", 50, 125, 20, WHITE);
+    DrawTextEx(fonte, "PODER:", (Vector2){50, 125}, 24, 2, WHITE);
     DesenharBarraPoder(120, 125, 300, 20, estado->jogador1->poderAtual, estado->jogador1->poderMaximo);
 
-    // HUD Player 2
-    DrawText(estado->jogador2->nome, LARGURA_TELA - 450, 50, 32, RED);
-    DrawText("VIDA:", LARGURA_TELA - 450, 90, 20, WHITE);
+    // Player 2 HUD (lado direito)
+    DrawTextEx(fonte, estado->jogador2->nome, (Vector2){LARGURA_TELA - 450, 50}, 36, 2, RED);
+    DrawTextEx(fonte, "VIDA:", (Vector2){LARGURA_TELA - 450, 90}, 24, 2, WHITE);
     DesenharBarraVida(LARGURA_TELA - 420, 90, 300, 25, estado->jogador2->vidaAtual, estado->jogador2->vidaMaxima, RED);
-    DrawText("PODER:", LARGURA_TELA - 450, 125, 20, WHITE);
+    DrawTextEx(fonte, "PODER:", (Vector2){LARGURA_TELA - 450, 125}, 24, 2, WHITE);
     DesenharBarraPoder(LARGURA_TELA - 420, 125, 300, 20, estado->jogador2->poderAtual, estado->jogador2->poderMaximo);
 
-    // Timer e Round
+    // Informações centrais
     const char *textoRound = TextFormat("ROUND %d/%d", estado->roundAtual, MAX_ROUNDS);
-    DrawText(textoRound, LARGURA_TELA / 2 - MeasureText(textoRound, 32) / 2, 30, 32, YELLOW);
+    DrawTextEx(fonte, textoRound, (Vector2){LARGURA_TELA / 2 - MeasureTextEx(fonte, textoRound, 36, 2).x / 2, 30}, 36, 2, YELLOW);
 
     const char *textoTempo = TextFormat("%.0f", estado->tempoRound);
-    DrawText(textoTempo, LARGURA_TELA / 2 - MeasureText(textoTempo, 48) / 2, 70, 48, WHITE);
+    DrawTextEx(fonte, textoTempo, (Vector2){LARGURA_TELA / 2 - MeasureTextEx(fonte, textoTempo, 52, 2).x / 2, 70}, 52, 2, WHITE);
 }
 
 void DesenharTelaSelecaoMapa(Mapa mapas[], int mapaAtual, Font fonte)
 {
-    // Fundo escuro
+
     DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, Fade(BLACK, 0.8f));
 
-    // Título
     const char *titulo = "ESCOLHA O MAPA DE LUTA";
-    DrawTextEx(fonte, titulo, (Vector2){LARGURA_TELA / 2 - MeasureTextEx(fonte, titulo, 48, 1).x / 2, 100}, 48, 1, WHITE);
+    Vector2 tamanhoTitulo = MeasureTextEx(fonte, titulo, 52, 2);
+    DrawTextEx(fonte, titulo, (Vector2){LARGURA_TELA / 2 - tamanhoTitulo.x / 2, 100}, 52, 2, WHITE);
 
-    // Preview do mapa
     int larguraMapa = 800;
     int alturaMapa = 450;
     int xMapa = (LARGURA_TELA - larguraMapa) / 2;
@@ -217,126 +620,19 @@ void DesenharTelaSelecaoMapa(Mapa mapas[], int mapaAtual, Font fonte)
                    (Rectangle){xMapa, yMapa, larguraMapa, alturaMapa},
                    (Vector2){0, 0}, 0.0f, WHITE);
 
-    // Borda do mapa selecionado
     DrawRectangleLines(xMapa - 5, yMapa - 5, larguraMapa + 10, alturaMapa + 10, YELLOW);
 
-    // Nome do mapa
     const char *nomeMapa = mapas[mapaAtual].nome;
-    DrawTextEx(fonte, nomeMapa, (Vector2){LARGURA_TELA / 2 - MeasureTextEx(fonte, nomeMapa, 36, 1).x / 2, yMapa + alturaMapa + 30}, 36, 1, YELLOW);
+    Vector2 tamanhoNome = MeasureTextEx(fonte, nomeMapa, 40, 2);
+    DrawTextEx(fonte, nomeMapa, (Vector2){LARGURA_TELA / 2 - tamanhoNome.x / 2, yMapa + alturaMapa + 30}, 40, 2, YELLOW);
 
-    // Descrição do mapa
     const char *descricao = mapas[mapaAtual].descricao;
-    DrawTextEx(fonte, descricao, (Vector2){LARGURA_TELA / 2 - MeasureTextEx(fonte, descricao, 24, 1).x / 2, yMapa + alturaMapa + 80}, 24, 1, LIGHTGRAY);
+    Vector2 tamanhoDesc = MeasureTextEx(fonte, descricao, 28, 2);
+    DrawTextEx(fonte, descricao, (Vector2){LARGURA_TELA / 2 - tamanhoDesc.x / 2, yMapa + alturaMapa + 80}, 28, 2, LIGHTGRAY);
 
-    // Controles
-    DrawText("← → para navegar mapas", 50, ALTURA_TELA - 100, 24, WHITE);
-    DrawText("ENTER para confirmar", 50, ALTURA_TELA - 70, 24, GREEN);
-    DrawText("BACKSPACE para voltar", 50, ALTURA_TELA - 40, 24, GRAY);
-}
-
-void CarregarPosesPersonagem(Personagem *p, const char *nomePersonagem)
-{
-    char caminhoArquivo[256];
-    printf("Carregando poses para: %s\n", nomePersonagem);
-
-    // Tentar carregar poses específicas para cada personagem
-    // Formato: personagens/[nome]_soco.png, personagens/[nome]_chute.png, etc.
-
-    // Pose de soco
-    sprintf(caminhoArquivo, "./personagens/%s_soco.png", nomePersonagem);
-    Texture2D texturaSoco = LoadTexture(caminhoArquivo);
-    if (texturaSoco.id > 0)
-    {
-        p->texturaSoco = texturaSoco;
-        printf("✓ Carregada pose de soco para %s!\n", nomePersonagem);
-    }
-    else
-    {
-        printf("✗ Não encontrada pose de soco: %s\n", caminhoArquivo);
-    }
-
-    // Pose de chute
-    sprintf(caminhoArquivo, "./personagens/%s_chute.png", nomePersonagem);
-    Texture2D texturaChute = LoadTexture(caminhoArquivo);
-    if (texturaChute.id > 0)
-    {
-        p->texturaChute = texturaChute;
-        printf("✓ Carregada pose de chute para %s!\n", nomePersonagem);
-    }
-    else
-    {
-        printf("✗ Não encontrada pose de chute: %s\n", caminhoArquivo);
-    }
-
-    // Pose de poder
-    sprintf(caminhoArquivo, "./personagens/%s_poder.png", nomePersonagem);
-    Texture2D texturaPoder = LoadTexture(caminhoArquivo);
-    if (texturaPoder.id > 0)
-    {
-        p->texturaPoder = texturaPoder;
-        printf("✓ Carregada pose de poder para %s!\n", nomePersonagem);
-    }
-    else
-    {
-        printf("✗ Não encontrada pose de poder: %s\n", caminhoArquivo);
-    }
-
-    // Pose de defesa
-    sprintf(caminhoArquivo, "./personagens/%s_defesa.png", nomePersonagem);
-    Texture2D texturaDefesa = LoadTexture(caminhoArquivo);
-    if (texturaDefesa.id > 0)
-    {
-        p->texturaDefesa = texturaDefesa;
-        printf("✓ Carregada pose de defesa para %s!\n", nomePersonagem);
-    }
-
-    // Pose de dano
-    sprintf(caminhoArquivo, "./personagens/%s_dano.png", nomePersonagem);
-    Texture2D texturaDano = LoadTexture(caminhoArquivo);
-    if (texturaDano.id > 0)
-    {
-        p->texturaDano = texturaDano;
-        printf("✓ Carregada pose de dano para %s!\n", nomePersonagem);
-    }
-
-    // Casos especiais para personagens específicos
-    if (strcmp(nomePersonagem, "Joana") == 0)
-    {
-        // Tentar carregar poses específicas do João para Joana
-        sprintf(caminhoArquivo, "./personagens/joao_soco.png");
-        Texture2D joaoSoco = LoadTexture(caminhoArquivo);
-        if (joaoSoco.id > 0 && p->texturaSoco.id == 0)
-        {
-            p->texturaSoco = joaoSoco;
-            printf("✓ Usando pose de soco do João para Joana!\n");
-        }
-
-        sprintf(caminhoArquivo, "./personagens/joao_chute.png");
-        Texture2D joaoChute = LoadTexture(caminhoArquivo);
-        if (joaoChute.id > 0 && p->texturaChute.id == 0)
-        {
-            p->texturaChute = joaoChute;
-            printf("✓ Usando pose de chute do João para Joana!\n");
-        }
-
-        sprintf(caminhoArquivo, "./personagens/joao_poder.png");
-        Texture2D joaoPoder = LoadTexture(caminhoArquivo);
-        if (joaoPoder.id > 0 && p->texturaPoder.id == 0)
-        {
-            p->texturaPoder = joaoPoder;
-            printf("✓ Usando pose de poder do João para Joana!\n");
-        }
-
-        // Pose inicial especial
-        Texture2D poseInicial = LoadTexture("./personagens/joao pose inicial.png");
-        if (poseInicial.id > 0)
-        {
-            p->texturaLuta = poseInicial;
-            printf("✓ Carregada pose inicial especial para Joana!\n");
-        }
-    }
-
-    printf("Carregamento de poses concluído para %s\n\n", nomePersonagem);
+    DrawTextEx(fonte, "← → para navegar mapas", (Vector2){50, ALTURA_TELA - 100}, 28, 2, WHITE);
+    DrawTextEx(fonte, "ENTER para confirmar", (Vector2){50, ALTURA_TELA - 70}, 28, 2, GREEN);
+    DrawTextEx(fonte, "BACKSPACE para voltar", (Vector2){50, ALTURA_TELA - 40}, 28, 2, GRAY);
 }
 
 void InicializarPersonagem(Personagem *p, const char *nomePersonagem)
@@ -345,64 +641,31 @@ void InicializarPersonagem(Personagem *p, const char *nomePersonagem)
     p->vidaAtual = VIDA_MAXIMA;
     p->poderMaximo = PODER_MAXIMO;
     p->poderAtual = 0;
-    p->danoSoco = 10;
-    p->danoChute = 20;
+    p->danoSoco = 20;
+    p->danoChute = 30;
     p->danoPoder = 50;
 
-    // Inicializar sistema de animação
     p->poseAtual = POSE_IDLE;
     p->timerAnimacao = 0.0f;
     p->duracaoAnimacao = 0.0f;
     p->animando = false;
 
-    // Carregar texturas de defesa e dano (usando as existentes como base)
+    // Inicializar sistema de movimento e sprites
+    p->velocidade = (Vector2){0, 0};
+    p->velocidadeMaxima = 200.0f;
+    p->viradoParaDireita = true;
+    p->podeAtacar = true;
+    p->podeSeMovimentar = true;
+
+    // Inicializar sprites
+    p->frameAtual = 0;
+    p->totalFrames = 4;
+    p->timerFrame = 0.0f;
+    p->duracaoFrame = 0.12f;
+    p->frameSource = (Rectangle){0, 0, 64, 64};
+
     p->texturaDefesa = p->texturaLuta;
     p->texturaDano = p->texturaLuta;
-
-    // Carregar poses específicas do personagem
-    CarregarPosesPersonagem(p, nomePersonagem);
-}
-
-void IniciarAnimacao(Personagem *p, TipoPose pose, float duracao)
-{
-    p->poseAtual = pose;
-    p->timerAnimacao = 0.0f;
-    p->duracaoAnimacao = duracao;
-    p->animando = true;
-}
-
-void AtualizarAnimacao(Personagem *p, float deltaTime)
-{
-    if (p->animando)
-    {
-        p->timerAnimacao += deltaTime;
-        if (p->timerAnimacao >= p->duracaoAnimacao)
-        {
-            p->poseAtual = POSE_IDLE;
-            p->animando = false;
-            p->timerAnimacao = 0.0f;
-        }
-    }
-}
-
-Texture2D ObterTexturaAtual(Personagem *p)
-{
-    switch (p->poseAtual)
-    {
-    case POSE_SOCO:
-        return p->texturaSoco;
-    case POSE_CHUTE:
-        return p->texturaChute;
-    case POSE_PODER:
-        return p->texturaPoder;
-    case POSE_DEFESA:
-        return p->texturaDefesa;
-    case POSE_DANO:
-        return p->texturaDano;
-    case POSE_IDLE:
-    default:
-        return p->texturaLuta;
-    }
 }
 
 void CriarEfeitoImpacto(SistemaParticulas *sistema, Vector2 posicao, Color cor, int numParticulas)
@@ -435,22 +698,17 @@ void AtualizarParticulas(SistemaParticulas *sistema, float deltaTime)
     {
         Particula *p = &sistema->particulas[i];
 
-        // Atualizar posição
         p->posicao.x += p->velocidade.x * deltaTime;
         p->posicao.y += p->velocidade.y * deltaTime;
 
-        // Aplicar gravidade
         p->velocidade.y += 300.0f * deltaTime;
 
-        // Reduzir vida
         p->vida -= deltaTime * 2.0f;
 
-        // Atualizar cor com fade
         float alpha = p->vida / p->vidaMaxima;
         p->cor.a = (unsigned char)(255 * alpha);
     }
 
-    // Desativar sistema quando todas as partículas morrerem
     if (sistema->timer > 1.0f)
     {
         sistema->ativo = false;
@@ -472,13 +730,9 @@ void DesenharParticulas(SistemaParticulas *sistema)
     }
 }
 
-// -------------------------------- FIM - FUNÇÕES DO SISTEMA DE LUTA ------------------------------------
-
-// -------------------------------- INICIO - FUNÇÕES DO MENU DE OPÇÕES ---------------------------------
-
 void InicializarConfiguracaoPadrao(ConfiguracaoJogo *config)
 {
-    // Controles padrão Player 1
+
     config->teclaPoderP1 = KEY_Q;
     config->teclaSocoP1 = KEY_E;
     config->teclaChute1 = KEY_R;
@@ -486,7 +740,6 @@ void InicializarConfiguracaoPadrao(ConfiguracaoJogo *config)
     config->teclaDireitaP1 = KEY_D;
     config->teclaConfirmarP1 = KEY_ENTER;
 
-    // Controles padrão Player 2
     config->teclaPoderP2 = KEY_P;
     config->teclaSocoP2 = KEY_O;
     config->teclaChute2 = KEY_I;
@@ -494,7 +747,6 @@ void InicializarConfiguracaoPadrao(ConfiguracaoJogo *config)
     config->teclaDireitaP2 = KEY_RIGHT;
     config->teclaConfirmarP2 = KEY_SPACE;
 
-    // Volume padrão
     config->volumeMusica = 0.5f;
     config->volumeEfeitos = 0.7f;
 }
@@ -574,15 +826,13 @@ const char *ObterNomeTecla(int tecla)
 
 void DesenharTelaOpcoes(ConfiguracaoJogo *config, int opcaoSelecionada, bool aguardandoTecla, Font fonte)
 {
-    // Fundo escuro
+
     DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, Fade(BLACK, 0.9f));
 
-    // Título
     const char *titulo = "OPÇÕES";
-    int larguraTitulo = MeasureText(titulo, 60);
-    DrawText(titulo, LARGURA_TELA / 2 - larguraTitulo / 2, 100, 60, WHITE);
+    Vector2 tamanhoTitulo = MeasureTextEx(fonte, titulo, 64, 2);
+    DrawTextEx(fonte, titulo, (Vector2){LARGURA_TELA / 2 - tamanhoTitulo.x / 2, 100}, 64, 2, WHITE);
 
-    // Opções de configuração
     const char *opcoes[OPCOES_CONFIG] = {
         "CONTROLES PLAYER 1",
         "CONTROLES PLAYER 2",
@@ -601,7 +851,6 @@ void DesenharTelaOpcoes(ConfiguracaoJogo *config, int opcaoSelecionada, bool agu
         Color corTexto = (i == opcaoSelecionada) ? YELLOW : WHITE;
         Color corCaixa = (i == opcaoSelecionada) ? Fade(YELLOW, 0.3f) : Fade(WHITE, 0.1f);
 
-        // Caixa da opção
         int larguraCaixa = 800;
         int alturaCaixa = 60;
         int x = (LARGURA_TELA - larguraCaixa) / 2;
@@ -610,72 +859,65 @@ void DesenharTelaOpcoes(ConfiguracaoJogo *config, int opcaoSelecionada, bool agu
         DrawRectangleRounded((Rectangle){x, y, larguraCaixa, alturaCaixa}, 0.1f, 10, corCaixa);
         DrawRectangleRoundedLines((Rectangle){x, y, larguraCaixa, alturaCaixa}, 0.1f, 10, corTexto);
 
-        // Texto da opção
-        DrawText(opcoes[i], x + 20, posY + i * espacamento, 32, corTexto);
+        DrawTextEx(fonte, opcoes[i], (Vector2){x + 20, posY + i * espacamento}, 36, 2, corTexto);
 
-        // Valores específicos
-        if (i == 0) // Controles Player 1
+        if (i == 0)
         {
             const char *controles = TextFormat("Poder:%s Soco:%s Chute:%s",
                                                ObterNomeTecla(config->teclaPoderP1),
                                                ObterNomeTecla(config->teclaSocoP1),
                                                ObterNomeTecla(config->teclaChute1));
-            DrawText(controles, x + 20, posY + i * espacamento + 35, 20, LIGHTGRAY);
+            DrawTextEx(fonte, controles, (Vector2){x + 20, posY + i * espacamento + 35}, 24, 2, LIGHTGRAY);
         }
-        else if (i == 1) // Controles Player 2
+        else if (i == 1)
         {
             const char *controles = TextFormat("Poder:%s Soco:%s Chute:%s",
                                                ObterNomeTecla(config->teclaPoderP2),
                                                ObterNomeTecla(config->teclaSocoP2),
                                                ObterNomeTecla(config->teclaChute2));
-            DrawText(controles, x + 20, posY + i * espacamento + 35, 20, LIGHTGRAY);
+            DrawTextEx(fonte, controles, (Vector2){x + 20, posY + i * espacamento + 35}, 24, 2, LIGHTGRAY);
         }
-        else if (i == 2) // Volume Música
+        else if (i == 2)
         {
             int barraLargura = 200;
             int barraX = x + 400;
             int barraY = posY + i * espacamento + 15;
 
-            // Barra de volume
             DrawRectangle(barraX, barraY, barraLargura, 20, DARKGRAY);
             DrawRectangle(barraX, barraY, (int)(barraLargura * config->volumeMusica), 20, GREEN);
             DrawRectangleLines(barraX, barraY, barraLargura, 20, WHITE);
 
             const char *volumeTexto = TextFormat("%.0f%%", config->volumeMusica * 100);
-            DrawText(volumeTexto, barraX + barraLargura + 10, barraY, 20, WHITE);
+            DrawTextEx(fonte, volumeTexto, (Vector2){barraX + barraLargura + 10, barraY}, 24, 2, WHITE);
         }
-        else if (i == 3) // Volume Efeitos
+        else if (i == 3)
         {
             int barraLargura = 200;
             int barraX = x + 400;
             int barraY = posY + i * espacamento + 15;
 
-            // Barra de volume
             DrawRectangle(barraX, barraY, barraLargura, 20, DARKGRAY);
             DrawRectangle(barraX, barraY, (int)(barraLargura * config->volumeEfeitos), 20, BLUE);
             DrawRectangleLines(barraX, barraY, barraLargura, 20, WHITE);
 
             const char *volumeTexto = TextFormat("%.0f%%", config->volumeEfeitos * 100);
-            DrawText(volumeTexto, barraX + barraLargura + 10, barraY, 20, WHITE);
+            DrawTextEx(fonte, volumeTexto, (Vector2){barraX + barraLargura + 10, barraY}, 24, 2, WHITE);
         }
     }
 
-    // Instruções
     if (aguardandoTecla)
     {
         const char *instrucao = "PRESSIONE UMA TECLA PARA CONFIGURAR...";
-        int larguraInstrucao = MeasureText(instrucao, 24);
-        DrawText(instrucao, LARGURA_TELA / 2 - larguraInstrucao / 2, ALTURA_TELA - 100, 24, YELLOW);
+        Vector2 tamanhoInstrucao = MeasureTextEx(fonte, instrucao, 28, 2);
+        DrawTextEx(fonte, instrucao, (Vector2){LARGURA_TELA / 2 - tamanhoInstrucao.x / 2, ALTURA_TELA - 100}, 28, 2, YELLOW);
     }
     else
     {
         const char *instrucoes = "↑/↓: Navegar | ENTER: Selecionar | ←/→: Ajustar Volume | BACKSPACE: Voltar";
-        int larguraInstrucoes = MeasureText(instrucoes, 20);
-        DrawText(instrucoes, LARGURA_TELA / 2 - larguraInstrucoes / 2, ALTURA_TELA - 80, 20, LIGHTGRAY);
+        Vector2 tamanhoInstrucoes = MeasureTextEx(fonte, instrucoes, 24, 2);
+        DrawTextEx(fonte, instrucoes, (Vector2){LARGURA_TELA / 2 - tamanhoInstrucoes.x / 2, ALTURA_TELA - 80}, 24, 2, LIGHTGRAY);
     }
 }
-
-// -------------------------------- FIM - FUNÇÕES DO MENU DE OPÇÕES ------------------------------------
 
 int main(void)
 {
@@ -688,24 +930,15 @@ int main(void)
     Texture2D fundoSelecao = LoadTexture("./fundo.png");
     Texture2D logo = LoadTexture("./logoUnifight3.png");
 
-    // Carregar música de fundo
     Music musicaFundo = LoadMusicStream("musicas/menu_background.mp3");
     PlayMusicStream(musicaFundo);
 
-    // Carregar sons (placeholder - você pode adicionar arquivos de som)
-    // Sons sons = {0};
-    // sons.somSoco = LoadSound("sons/soco.wav");
-    // sons.somChute = LoadSound("sons/chute.wav");
-    // sons.somPoder = LoadSound("sons/poder.wav");
-
-    // Configurações do jogo
     ConfiguracaoJogo config = {0};
     InicializarConfiguracaoPadrao(&config);
 
-    // Variáveis do menu de opções
     int opcaoSelecionada = 0;
     bool aguardandoTecla = false;
-    int teclaParaConfigurar = -1; // 0-5 para as 6 teclas configuráveis
+    int teclaParaConfigurar = -1;
 
     OpcaoMenu menu[OPCOES_MENU] = {
         {"JOGAR", 600},
@@ -751,13 +984,11 @@ int main(void)
          RED,
          LoadTexture("./personagens/yuri.jpg"), LoadTexture("./personagens/yuri.jpg"), LoadTexture("./personagens/yuri.jpg"), LoadTexture("./personagens/yuri.jpg")}};
 
-    // Inicializar stats dos personagens
     for (int i = 0; i < MAX_PERSONAGENS; i++)
     {
         InicializarPersonagem(&personagens[i], personagens[i].nome);
     }
 
-    // Mapas de luta
     Mapa mapas[MAX_MAPAS] = {
         {LoadTexture("./frames/frame-1.png"), "Arena Vulcânica", "Arena cercada por lava e rochas ígneas. Ideal para lutadores de fogo."},
         {LoadTexture("./frames/frame-2.png"), "Caverna Cristalina", "Caverna mística com cristais de gelo brilhantes. Favorece usuários de gelo."},
@@ -770,7 +1001,6 @@ int main(void)
     int selecionadoJogador2 = MAX_PERSONAGENS - 1;
     int mapaAtual = 0;
 
-    // Estado do jogo
     EstadoJogo estado = {0};
     estado.roundAtual = 1;
     estado.tempoRound = TEMPO_ROUND;
@@ -778,12 +1008,17 @@ int main(void)
     estado.jogador2Confirmado = false;
     estado.mapaConfirmado = false;
 
+    // Configurar limites da arena
+    estado.limiteEsquerdo = 100.0f;
+    estado.limiteDireito = LARGURA_TELA - 100.0f;
+    estado.chao = ALTURA_TELA - 100.0f;
+
     Tela telaAtual = TELA_MENU;
-    int tamanhoFonte = 40;
+    int tamanhoFonte = 44;
 
     while (!WindowShouldClose())
     {
-        // Atualizar música de fundo
+
         UpdateMusicStream(musicaFundo);
         SetMusicVolume(musicaFundo, config.volumeMusica);
 
@@ -815,21 +1050,20 @@ int main(void)
         {
             if (!aguardandoTecla)
             {
-                // Navegação no menu de opções
+
                 if (IsKeyPressed(KEY_DOWN))
                     opcaoSelecionada = (opcaoSelecionada + 1) % OPCOES_CONFIG;
                 if (IsKeyPressed(KEY_UP))
                     opcaoSelecionada = (opcaoSelecionada - 1 + OPCOES_CONFIG) % OPCOES_CONFIG;
 
-                // Ajustar volume com setas
-                if (opcaoSelecionada == 2) // Volume Música
+                if (opcaoSelecionada == 2)
                 {
                     if (IsKeyPressed(KEY_LEFT))
                         config.volumeMusica = fmaxf(0.0f, config.volumeMusica - 0.1f);
                     if (IsKeyPressed(KEY_RIGHT))
                         config.volumeMusica = fminf(1.0f, config.volumeMusica + 0.1f);
                 }
-                else if (opcaoSelecionada == 3) // Volume Efeitos
+                else if (opcaoSelecionada == 3)
                 {
                     if (IsKeyPressed(KEY_LEFT))
                         config.volumeEfeitos = fmaxf(0.0f, config.volumeEfeitos - 0.1f);
@@ -837,30 +1071,28 @@ int main(void)
                         config.volumeEfeitos = fminf(1.0f, config.volumeEfeitos + 0.1f);
                 }
 
-                // Selecionar opção
                 if (IsKeyPressed(KEY_ENTER))
                 {
-                    if (opcaoSelecionada == 0) // Controles Player 1
+                    if (opcaoSelecionada == 0)
                     {
                         aguardandoTecla = true;
-                        teclaParaConfigurar = 0; // Começar com poder P1
+                        teclaParaConfigurar = 0;
                     }
-                    else if (opcaoSelecionada == 1) // Controles Player 2
+                    else if (opcaoSelecionada == 1)
                     {
                         aguardandoTecla = true;
-                        teclaParaConfigurar = 3; // Começar com poder P2
+                        teclaParaConfigurar = 3;
                     }
-                    else if (opcaoSelecionada == 4) // Resetar controles
+                    else if (opcaoSelecionada == 4)
                     {
                         InicializarConfiguracaoPadrao(&config);
                     }
-                    else if (opcaoSelecionada == 7) // Voltar
+                    else if (opcaoSelecionada == 7)
                     {
                         telaAtual = TELA_MENU;
                     }
                 }
 
-                // Voltar ao menu
                 if (IsKeyPressed(KEY_BACKSPACE))
                 {
                     telaAtual = TELA_MENU;
@@ -868,11 +1100,11 @@ int main(void)
             }
             else
             {
-                // Aguardando configuração de tecla
+
                 int tecla = GetKeyPressed();
                 if (tecla != 0)
                 {
-                    // Configurar a tecla baseada no índice
+
                     switch (teclaParaConfigurar)
                     {
                     case 0:
@@ -897,7 +1129,6 @@ int main(void)
 
                     teclaParaConfigurar++;
 
-                    // Se configurou todas as teclas do player atual, parar
                     if ((teclaParaConfigurar == 3 && opcaoSelecionada == 0) ||
                         (teclaParaConfigurar == 6 && opcaoSelecionada == 1))
                     {
@@ -906,7 +1137,6 @@ int main(void)
                     }
                 }
 
-                // Cancelar configuração
                 if (IsKeyPressed(KEY_ESCAPE))
                 {
                     aguardandoTecla = false;
@@ -916,25 +1146,22 @@ int main(void)
         }
         else if (telaAtual == TELA_SELECAO)
         {
-            // Controles Player 1
+
             if (IsKeyPressed(KEY_D))
                 selecionadoJogador1 = (selecionadoJogador1 + 1) % MAX_PERSONAGENS;
             if (IsKeyPressed(KEY_A))
                 selecionadoJogador1 = (selecionadoJogador1 - 1 + MAX_PERSONAGENS) % MAX_PERSONAGENS;
 
-            // Controles Player 2
             if (IsKeyPressed(KEY_RIGHT))
                 selecionadoJogador2 = (selecionadoJogador2 + 1) % MAX_PERSONAGENS;
             if (IsKeyPressed(KEY_LEFT))
                 selecionadoJogador2 = (selecionadoJogador2 - 1 + MAX_PERSONAGENS) % MAX_PERSONAGENS;
 
-            // Navegação de mapas
             if (IsKeyPressed(KEY_UP))
                 mapaAtual = (mapaAtual - 1 + MAX_MAPAS) % MAX_MAPAS;
             if (IsKeyPressed(KEY_DOWN))
                 mapaAtual = (mapaAtual + 1) % MAX_MAPAS;
 
-            // Confirmação de seleção
             if (IsKeyPressed(KEY_ENTER) && !estado.jogador1Confirmado)
             {
                 estado.jogador1Confirmado = true;
@@ -952,13 +1179,11 @@ int main(void)
                        personagens[selecionadoJogador2].habilidade);
             }
 
-            // Ir para seleção de mapa quando ambos confirmaram
             if (estado.jogador1Confirmado && estado.jogador2Confirmado)
             {
                 telaAtual = TELA_SELECAO_MAPA;
             }
 
-            // Voltar ao menu
             if (IsKeyPressed(KEY_BACKSPACE))
             {
                 telaAtual = TELA_MENU;
@@ -968,21 +1193,31 @@ int main(void)
         }
         else if (telaAtual == TELA_SELECAO_MAPA)
         {
-            // Navegação de mapas
+
             if (IsKeyPressed(KEY_LEFT))
                 mapaAtual = (mapaAtual - 1 + MAX_MAPAS) % MAX_MAPAS;
             if (IsKeyPressed(KEY_RIGHT))
                 mapaAtual = (mapaAtual + 1) % MAX_MAPAS;
 
-            // Confirmar mapa
             if (IsKeyPressed(KEY_ENTER))
             {
                 estado.mapaAtual = &mapas[mapaAtual];
                 estado.mapaConfirmado = true;
+
+                // Inicializar posições dos personagens na arena
+                InicializarPosicaoPersonagem(estado.jogador1, 300.0f, estado.chao, true);
+                InicializarPosicaoPersonagem(estado.jogador2, LARGURA_TELA - 300.0f, estado.chao, false);
+
+                // Fazer os personagens se virarem um para o outro
+                VirarPersonagemParaOponente(estado.jogador1, estado.jogador2);
+
                 telaAtual = TELA_LUTA;
+                printf("Mapa selecionado: %s\n", mapas[mapaAtual].nome);
+                printf("Posições inicializadas - P1: (%.0f, %.0f) P2: (%.0f, %.0f)\n",
+                       estado.jogador1->posicao.x, estado.jogador1->posicao.y,
+                       estado.jogador2->posicao.x, estado.jogador2->posicao.y);
             }
 
-            // Voltar para seleção de personagens
             if (IsKeyPressed(KEY_BACKSPACE))
             {
                 telaAtual = TELA_SELECAO;
@@ -992,15 +1227,16 @@ int main(void)
         }
         else if (telaAtual == TELA_LUTA)
         {
-            // Atualizar timer
-            estado.tempoRound -= GetFrameTime();
+            float deltaTime = GetFrameTime();
+
+            estado.tempoRound -= deltaTime;
             if (estado.tempoRound <= 0)
             {
                 estado.tempoRound = TEMPO_ROUND;
                 estado.roundAtual++;
                 if (estado.roundAtual > MAX_ROUNDS)
                 {
-                    // Fim do jogo - voltar ao menu
+
                     telaAtual = TELA_MENU;
                     estado.roundAtual = 1;
                     estado.jogador1Confirmado = false;
@@ -1009,136 +1245,163 @@ int main(void)
                 }
             }
 
-            // Atualizar animações dos personagens
-            AtualizarAnimacao(estado.jogador1, GetFrameTime());
-            AtualizarAnimacao(estado.jogador2, GetFrameTime());
+            // Processar movimento dos personagens
+            ProcessarMovimentoPlayer1(estado.jogador1, &config);
+            ProcessarMovimentoPlayer2(estado.jogador2, &config);
 
-            // Atualizar efeitos visuais
-            AtualizarParticulas(&estado.particulasImpacto, GetFrameTime());
+            // Mover personagens
+            MoverPersonagem(estado.jogador1, deltaTime, estado.limiteEsquerdo, estado.limiteDireito);
+            MoverPersonagem(estado.jogador2, deltaTime, estado.limiteEsquerdo, estado.limiteDireito);
+
+            // Fazer personagens se virarem um para o outro automaticamente
+            VirarPersonagemParaOponente(estado.jogador1, estado.jogador2);
+
+            // Atualizar animações
+            AtualizarAnimacao(estado.jogador1, deltaTime);
+            AtualizarAnimacao(estado.jogador2, deltaTime);
+            AtualizarAnimacaoSprite(estado.jogador1, deltaTime);
+            AtualizarAnimacaoSprite(estado.jogador2, deltaTime);
+
+            AtualizarParticulas(&estado.particulasImpacto, deltaTime);
             if (estado.flashTela > 0)
-                estado.flashTela -= GetFrameTime() * 3.0f;
+                estado.flashTela -= deltaTime * 3.0f;
             if (estado.tremor > 0)
-                estado.tremor -= GetFrameTime() * 5.0f;
+                estado.tremor -= deltaTime * 5.0f;
 
-            // Controles de luta Player 1 (configuráveis)
-            if (IsKeyPressed(config.teclaPoderP1) && estado.jogador1->poderAtual >= 50 && !estado.jogador1->animando)
+            // Ataques Player 1
+            if (IsKeyPressed(config.teclaPoderP1) && estado.jogador1->poderAtual >= 50 && estado.jogador1->podeAtacar)
             {
-                estado.jogador2->vidaAtual -= estado.jogador1->danoPoder;
-                estado.jogador1->poderAtual -= 50;
-                IniciarAnimacao(estado.jogador1, POSE_PODER, 0.8f);
-                IniciarAnimacao(estado.jogador2, POSE_DANO, 0.5f);
-
-                // Efeitos visuais para ataque de poder
-                Vector2 posImpacto = {LARGURA_TELA - 400 + 100, ALTURA_TELA - 400 + 150};
-                CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, PURPLE, 25);
-                estado.flashTela = 0.3f;
-                estado.tremor = 0.2f;
-                // PlaySound(sons.somPoder);
+                if (ExecutarAtaque(estado.jogador1, estado.jogador2, POSE_PODER, estado.jogador1->danoPoder))
+                {
+                    estado.jogador1->poderAtual = 0;
+                    Vector2 posImpacto = {estado.jogador2->posicao.x, estado.jogador2->posicao.y - 50};
+                    CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, estado.jogador1->corHabilidade, 30);
+                    estado.flashTela = 0.4f;
+                    estado.tremor = 0.3f;
+                }
             }
-            if (IsKeyPressed(config.teclaSocoP1) && !estado.jogador1->animando)
+            if (IsKeyPressed(config.teclaSocoP1) && estado.jogador1->podeAtacar)
             {
-                estado.jogador2->vidaAtual -= estado.jogador1->danoSoco;
-                estado.jogador1->poderAtual += 10;
-                IniciarAnimacao(estado.jogador1, POSE_SOCO, 0.3f);
-                IniciarAnimacao(estado.jogador2, POSE_DANO, 0.3f);
-
-                // Efeitos visuais para soco
-                Vector2 posImpacto = {LARGURA_TELA - 400 + 100, ALTURA_TELA - 400 + 150};
-                CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, YELLOW, 15);
-                estado.tremor = 0.1f;
-                // PlaySound(sons.somSoco);
+                if (ExecutarAtaque(estado.jogador1, estado.jogador2, POSE_SOCO, estado.jogador1->danoSoco))
+                {
+                    estado.jogador1->poderAtual += 10;
+                    if (estado.jogador1->poderAtual > PODER_MAXIMO)
+                        estado.jogador1->poderAtual = PODER_MAXIMO;
+                    Vector2 posImpacto = {estado.jogador2->posicao.x, estado.jogador2->posicao.y - 50};
+                    CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, YELLOW, 15);
+                    estado.tremor = 0.1f;
+                }
             }
-            if (IsKeyPressed(config.teclaChute1) && !estado.jogador1->animando)
+            if (IsKeyPressed(config.teclaChute1) && estado.jogador1->podeAtacar)
             {
-                estado.jogador2->vidaAtual -= estado.jogador1->danoChute;
-                estado.jogador1->poderAtual += 15;
-                IniciarAnimacao(estado.jogador1, POSE_CHUTE, 0.5f);
-                IniciarAnimacao(estado.jogador2, POSE_DANO, 0.4f);
-
-                // Efeitos visuais para chute
-                Vector2 posImpacto = {LARGURA_TELA - 400 + 100, ALTURA_TELA - 400 + 150};
-                CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, ORANGE, 20);
-                estado.tremor = 0.15f;
-                // PlaySound(sons.somChute);
+                if (ExecutarAtaque(estado.jogador1, estado.jogador2, POSE_CHUTE, estado.jogador1->danoChute))
+                {
+                    estado.jogador1->poderAtual += 15;
+                    if (estado.jogador1->poderAtual > PODER_MAXIMO)
+                        estado.jogador1->poderAtual = PODER_MAXIMO;
+                    Vector2 posImpacto = {estado.jogador2->posicao.x, estado.jogador2->posicao.y - 50};
+                    CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, ORANGE, 20);
+                    estado.tremor = 0.15f;
+                }
             }
 
-            // Controles de luta Player 2 (configuráveis)
-            if (IsKeyPressed(config.teclaPoderP2) && estado.jogador2->poderAtual >= 50 && !estado.jogador2->animando)
+            // Ataques Player 2
+            if (IsKeyPressed(config.teclaPoderP2) && estado.jogador2->poderAtual >= 50 && estado.jogador2->podeAtacar)
             {
-                estado.jogador1->vidaAtual -= estado.jogador2->danoPoder;
-                estado.jogador2->poderAtual -= 50;
-                IniciarAnimacao(estado.jogador2, POSE_PODER, 0.8f);
-                IniciarAnimacao(estado.jogador1, POSE_DANO, 0.5f);
-
-                // Efeitos visuais para ataque de poder
-                Vector2 posImpacto = {200 + 100, ALTURA_TELA - 400 + 150};
-                CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, PURPLE, 25);
-                estado.flashTela = 0.3f;
-                estado.tremor = 0.2f;
-                // PlaySound(sons.somPoder);
+                if (ExecutarAtaque(estado.jogador2, estado.jogador1, POSE_PODER, estado.jogador2->danoPoder))
+                {
+                    estado.jogador2->poderAtual = 0;
+                    Vector2 posImpacto = {estado.jogador1->posicao.x, estado.jogador1->posicao.y - 50};
+                    CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, estado.jogador2->corHabilidade, 30);
+                    estado.flashTela = 0.4f;
+                    estado.tremor = 0.3f;
+                }
             }
-            if (IsKeyPressed(config.teclaSocoP2) && !estado.jogador2->animando)
+            if (IsKeyPressed(config.teclaSocoP2) && estado.jogador2->podeAtacar)
             {
-                estado.jogador1->vidaAtual -= estado.jogador2->danoSoco;
-                estado.jogador2->poderAtual += 10;
-                IniciarAnimacao(estado.jogador2, POSE_SOCO, 0.3f);
-                IniciarAnimacao(estado.jogador1, POSE_DANO, 0.3f);
-
-                // Efeitos visuais para soco
-                Vector2 posImpacto = {200 + 100, ALTURA_TELA - 400 + 150};
-                CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, YELLOW, 15);
-                estado.tremor = 0.1f;
-                // PlaySound(sons.somSoco);
+                if (ExecutarAtaque(estado.jogador2, estado.jogador1, POSE_SOCO, estado.jogador2->danoSoco))
+                {
+                    estado.jogador2->poderAtual += 10;
+                    if (estado.jogador2->poderAtual > PODER_MAXIMO)
+                        estado.jogador2->poderAtual = PODER_MAXIMO;
+                    Vector2 posImpacto = {estado.jogador1->posicao.x, estado.jogador1->posicao.y - 50};
+                    CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, YELLOW, 15);
+                    estado.tremor = 0.1f;
+                }
             }
-            if (IsKeyPressed(config.teclaChute2) && !estado.jogador2->animando)
+            if (IsKeyPressed(config.teclaChute2) && estado.jogador2->podeAtacar)
             {
-                estado.jogador1->vidaAtual -= estado.jogador2->danoChute;
-                estado.jogador2->poderAtual += 15;
-                IniciarAnimacao(estado.jogador2, POSE_CHUTE, 0.5f);
-                IniciarAnimacao(estado.jogador1, POSE_DANO, 0.4f);
-
-                // Efeitos visuais para chute
-                Vector2 posImpacto = {200 + 100, ALTURA_TELA - 400 + 150};
-                CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, ORANGE, 20);
-                estado.tremor = 0.15f;
-                // PlaySound(sons.somChute);
+                if (ExecutarAtaque(estado.jogador2, estado.jogador1, POSE_CHUTE, estado.jogador2->danoChute))
+                {
+                    estado.jogador2->poderAtual += 15;
+                    if (estado.jogador2->poderAtual > PODER_MAXIMO)
+                        estado.jogador2->poderAtual = PODER_MAXIMO;
+                    Vector2 posImpacto = {estado.jogador1->posicao.x, estado.jogador1->posicao.y - 50};
+                    CriarEfeitoImpacto(&estado.particulasImpacto, posImpacto, ORANGE, 20);
+                    estado.tremor = 0.15f;
+                }
             }
 
-            // Verificar se alguém morreu
+            // Verificar fim de jogo
             if (estado.jogador1->vidaAtual <= 0 || estado.jogador2->vidaAtual <= 0)
             {
-                // Fim da luta - voltar ao menu
+                // Mostrar vencedor por 2 segundos antes de voltar ao menu
+                const char *vencedor = estado.jogador1->vidaAtual <= 0 ? estado.jogador2->nome : estado.jogador1->nome;
+                Color corVencedor = estado.jogador1->vidaAtual <= 0 ? RED : BLUE;
+
+                DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, Fade(BLACK, 0.7f));
+
+                const char *textoVitoria = TextFormat("%s VENCEU!", vencedor);
+                Vector2 tamanhoTexto = MeasureTextEx(fontePixel, textoVitoria, 72, 2);
+                DrawTextEx(fontePixel, textoVitoria, (Vector2){LARGURA_TELA / 2 - tamanhoTexto.x / 2, ALTURA_TELA / 2 - 50}, 72, 2, corVencedor);
+
+                DrawTextEx(fontePixel, "Voltando ao menu em instantes...", (Vector2){LARGURA_TELA / 2 - 200, ALTURA_TELA / 2 + 50}, 28, 2, WHITE);
+
+                // Delay antes de voltar ao menu
+                static float timerVitoria = 0;
+                timerVitoria += GetFrameTime();
+
+                if (timerVitoria > 3.0f || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE))
+                {
+                    timerVitoria = 0;
+                    telaAtual = TELA_MENU;
+                    estado.roundAtual = 1;
+                    estado.tempoRound = TEMPO_ROUND;
+                    estado.jogador1Confirmado = false;
+                    estado.jogador2Confirmado = false;
+                    estado.mapaConfirmado = false;
+
+                    // Resetar todos os personagens
+                    for (int i = 0; i < MAX_PERSONAGENS; i++)
+                    {
+                        InicializarPersonagem(&personagens[i], personagens[i].nome);
+                    }
+                }
+            }
+
+            if (IsKeyPressed(KEY_ESCAPE))
+            {
                 telaAtual = TELA_MENU;
                 estado.roundAtual = 1;
+                estado.tempoRound = TEMPO_ROUND;
                 estado.jogador1Confirmado = false;
                 estado.jogador2Confirmado = false;
                 estado.mapaConfirmado = false;
 
-                // Reinicializar personagens
+                // Resetar personagens ao sair da luta
                 for (int i = 0; i < MAX_PERSONAGENS; i++)
                 {
                     InicializarPersonagem(&personagens[i], personagens[i].nome);
                 }
             }
-
-            // Voltar ao menu
-            if (IsKeyPressed(KEY_ESCAPE))
-            {
-                telaAtual = TELA_MENU;
-                estado.roundAtual = 1;
-                estado.jogador1Confirmado = false;
-                estado.jogador2Confirmado = false;
-                estado.mapaConfirmado = false;
-            }
         }
 
-        // --------------------------------------------- DESENHO ----------------------------------------------------
         BeginDrawing();
         ClearBackground(BLACK);
 
         if (telaAtual == TELA_MENU)
         {
-            // Fundo do menu redimensionado para preencher toda a tela
+
             DrawTexturePro(fundoMenu,
                            (Rectangle){0, 0, (float)fundoMenu.width, (float)fundoMenu.height},
                            (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
@@ -1166,8 +1429,8 @@ int main(void)
 
                 DrawRectangleRounded((Rectangle){bx, by, larguraCaixa, alturaCaixa}, 0.3f, 10, corCaixa);
 
-                Vector2 tamTexto = MeasureTextEx(fontePixel, texto, tamanhoFonte, 1);
-                DrawTextEx(fontePixel, texto, (Vector2){(LARGURA_TELA - tamTexto.x) / 2, menu[i].posY}, tamanhoFonte, 1, corTexto);
+                Vector2 tamTexto = MeasureTextEx(fontePixel, texto, tamanhoFonte, 2);
+                DrawTextEx(fontePixel, texto, (Vector2){(LARGURA_TELA - tamTexto.x) / 2, menu[i].posY}, tamanhoFonte, 2, corTexto);
             }
         }
         else if (telaAtual == TELA_OPCOES)
@@ -1176,84 +1439,105 @@ int main(void)
         }
         else if (telaAtual == TELA_SELECAO)
         {
-            // Fundo redimensionado para preencher toda a tela
+
             DrawTexturePro(fundoSelecao,
                            (Rectangle){0, 0, (float)fundoSelecao.width, (float)fundoSelecao.height},
                            (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
                            (Vector2){0, 0}, 0.0f, WHITE);
 
-            // Overlay escuro para melhor contraste do texto
             DrawRectangleGradientV(0, 0, LARGURA_TELA, ALTURA_TELA,
                                    Fade(BLACK, 0.3f), Fade(BLACK, 0.6f));
 
             int metadeLargura = LARGURA_TELA / 2;
             int alturaPersonagens = 500;
 
-            // Painéis de fundo para as áreas dos personagens
             DrawRectangleRounded((Rectangle){20, 130, metadeLargura - 40, alturaPersonagens + 40}, 0.1f, 10, Fade(BLACK, 0.7f));
             DrawRectangleRounded((Rectangle){metadeLargura + 20, 130, metadeLargura - 40, alturaPersonagens + 40}, 0.1f, 10, Fade(BLACK, 0.7f));
 
-            // Bordas dos painéis
             DrawRectangleRoundedLines((Rectangle){20, 130, metadeLargura - 40, alturaPersonagens + 40}, 0.1f, 10, estado.jogador1Confirmado ? GREEN : BLUE);
             DrawRectangleRoundedLines((Rectangle){metadeLargura + 20, 130, metadeLargura - 40, alturaPersonagens + 40}, 0.1f, 10, estado.jogador2Confirmado ? GREEN : RED);
 
-            // Desenhar seleção de personagens
             DesenharSelecaoPersonagem(personagens, selecionadoJogador1, 0, 150, metadeLargura, alturaPersonagens, estado.jogador1Confirmado ? GREEN : BLUE);
             DesenharSelecaoPersonagem(personagens, selecionadoJogador2, metadeLargura, 150, metadeLargura, alturaPersonagens, estado.jogador2Confirmado ? GREEN : RED);
 
-            // Painel do título
             DrawRectangleRounded((Rectangle){20, 20, LARGURA_TELA - 40, 80}, 0.2f, 10, Fade(BLACK, 0.8f));
             DrawRectangleRoundedLines((Rectangle){20, 20, LARGURA_TELA - 40, 80}, 0.2f, 10, WHITE);
 
-            // Título
             const char *titulo = "SELECIONE SEU PERSONAGEM";
-            int larguraTitulo = MeasureText(titulo, 50);
-            DrawText(titulo, LARGURA_TELA / 2 - larguraTitulo / 2, 40, 50, WHITE);
+            Vector2 tamanhoTitulo = MeasureTextEx(fontePixel, titulo, 54, 2);
+            DrawTextEx(fontePixel, titulo, (Vector2){LARGURA_TELA / 2 - tamanhoTitulo.x / 2, 40}, 54, 2, WHITE);
 
-            // Status de confirmação
+            // Status de confirmação com fontes melhoradas e estilização
+            // Player 1 - Painel estilizado
+            int larguraPainel = 350;
+            int alturaPainel = 45;
+            int xPlayer1 = 50;
+            int yPlayer1 = 105;
+
+            Color corFundoP1 = estado.jogador1Confirmado ? Fade(GREEN, 0.3f) : Fade(BLUE, 0.3f);
+            Color corBordaP1 = estado.jogador1Confirmado ? GREEN : BLUE;
+            Color corTextoP1 = estado.jogador1Confirmado ? GREEN : BLUE;
+
+            DrawRectangleRounded((Rectangle){xPlayer1, yPlayer1, larguraPainel, alturaPainel}, 0.2f, 10, corFundoP1);
+            DrawRectangleRoundedLines((Rectangle){xPlayer1, yPlayer1, larguraPainel, alturaPainel}, 0.2f, 10, corBordaP1);
+
             if (estado.jogador1Confirmado)
-                DrawText("PLAYER 1 CONFIRMADO!", 50, 110, 24, GREEN);
+            {
+                DrawTextEx(fontePixel, "✓ PLAYER 1 CONFIRMADO!", (Vector2){xPlayer1 + 15, yPlayer1 + 8}, 32, 2, corTextoP1);
+            }
             else
-                DrawText("PLAYER 1 (A / D)", 50, 110, 24, BLUE);
+            {
+                DrawTextEx(fontePixel, "PLAYER 1 (A / D)", (Vector2){xPlayer1 + 15, yPlayer1 + 8}, 32, 2, corTextoP1);
+            }
+
+            // Player 2 - Painel estilizado
+            int xPlayer2 = metadeLargura + 50;
+            int yPlayer2 = 105;
+
+            Color corFundoP2 = estado.jogador2Confirmado ? Fade(GREEN, 0.3f) : Fade(RED, 0.3f);
+            Color corBordaP2 = estado.jogador2Confirmado ? GREEN : RED;
+            Color corTextoP2 = estado.jogador2Confirmado ? GREEN : RED;
+
+            DrawRectangleRounded((Rectangle){xPlayer2, yPlayer2, larguraPainel, alturaPainel}, 0.2f, 10, corFundoP2);
+            DrawRectangleRoundedLines((Rectangle){xPlayer2, yPlayer2, larguraPainel, alturaPainel}, 0.2f, 10, corBordaP2);
 
             if (estado.jogador2Confirmado)
-                DrawText("PLAYER 2 CONFIRMADO!", metadeLargura + 50, 110, 24, GREEN);
+            {
+                DrawTextEx(fontePixel, "✓ PLAYER 2 CONFIRMADO!", (Vector2){xPlayer2 + 15, yPlayer2 + 8}, 32, 2, corTextoP2);
+            }
             else
-                DrawText("PLAYER 2 (← / →)", metadeLargura + 50, 110, 24, RED);
+            {
+                DrawTextEx(fontePixel, "PLAYER 2 (← / →)", (Vector2){xPlayer2 + 15, yPlayer2 + 8}, 32, 2, corTextoP2);
+            }
 
-            // Painel de fundo para informações dos personagens
             int posYInfo = 680;
             DrawRectangleRounded((Rectangle){30, posYInfo, LARGURA_TELA - 60, 300}, 0.1f, 10, Fade(BLACK, 0.8f));
             DrawRectangleRoundedLines((Rectangle){30, posYInfo, LARGURA_TELA - 60, 300}, 0.1f, 10, WHITE);
 
-            // Linha divisória vertical entre os dois jogadores
             DrawLine(LARGURA_TELA / 2, posYInfo + 20, LARGURA_TELA / 2, posYInfo + 280, WHITE);
 
-            // Informações detalhadas dos personagens selecionados
             DesenharInfoPersonagem(personagens[selecionadoJogador1], 50, posYInfo + 20, metadeLargura - 80, 260, fontePixel);
             DesenharInfoPersonagem(personagens[selecionadoJogador2], metadeLargura + 30, posYInfo + 20, metadeLargura - 80, 260, fontePixel);
 
-            // Painel de instruções
             DrawRectangleRounded((Rectangle){30, ALTURA_TELA - 80, LARGURA_TELA - 60, 50}, 0.1f, 10, Fade(BLACK, 0.9f));
             DrawRectangleRoundedLines((Rectangle){30, ALTURA_TELA - 80, LARGURA_TELA - 60, 50}, 0.1f, 10, GRAY);
 
-            // Instruções na parte inferior
             if (!estado.jogador1Confirmado)
-                DrawText("ENTER: Confirmar Player 1", 50, ALTURA_TELA - 60, 18, BLUE);
+                DrawTextEx(fontePixel, "ENTER: Confirmar Player 1", (Vector2){50, ALTURA_TELA - 60}, 22, 2, BLUE);
             if (!estado.jogador2Confirmado)
-                DrawText("SPACE: Confirmar Player 2", 400, ALTURA_TELA - 60, 18, RED);
+                DrawTextEx(fontePixel, "SPACE: Confirmar Player 2", (Vector2){400, ALTURA_TELA - 60}, 22, 2, RED);
 
             if (estado.jogador1Confirmado && estado.jogador2Confirmado)
             {
                 const char *textoTransicao = "Aguarde... Indo para seleção de mapa!";
-                int larguraTexto = MeasureText(textoTransicao, 24);
-                DrawText(textoTransicao, LARGURA_TELA / 2 - larguraTexto / 2, ALTURA_TELA - 55, 24, YELLOW);
+                Vector2 tamanhoTexto = MeasureTextEx(fontePixel, textoTransicao, 28, 2);
+                DrawTextEx(fontePixel, textoTransicao, (Vector2){LARGURA_TELA / 2 - tamanhoTexto.x / 2, ALTURA_TELA - 55}, 28, 2, YELLOW);
             }
             else
             {
                 const char *textoVoltar = "BACKSPACE: Voltar ao menu";
-                int larguraTexto = MeasureText(textoVoltar, 18);
-                DrawText(textoVoltar, LARGURA_TELA / 2 - larguraTexto / 2, ALTURA_TELA - 40, 18, WHITE);
+                Vector2 tamanhoTexto = MeasureTextEx(fontePixel, textoVoltar, 22, 2);
+                DrawTextEx(fontePixel, textoVoltar, (Vector2){LARGURA_TELA / 2 - tamanhoTexto.x / 2, ALTURA_TELA - 40}, 22, 2, WHITE);
             }
         }
         else if (telaAtual == TELA_SELECAO_MAPA)
@@ -1262,208 +1546,326 @@ int main(void)
         }
         else if (telaAtual == TELA_LUTA)
         {
-            // Aplicar tremor na tela
             int offsetTremor = 0;
             if (estado.tremor > 0)
             {
                 offsetTremor = (int)(estado.tremor * 20 * sin(GetTime() * 50));
             }
 
-            // Fundo do mapa redimensionado para preencher toda a tela com tremor
             DrawTexturePro(estado.mapaAtual->textura,
                            (Rectangle){0, 0, (float)estado.mapaAtual->textura.width, (float)estado.mapaAtual->textura.height},
                            (Rectangle){offsetTremor, offsetTremor, LARGURA_TELA, ALTURA_TELA},
                            (Vector2){0, 0}, 0.0f, WHITE);
 
-            // Desenhar personagens com animação
-            int posPlayer1X = 200;
-            int posPlayer2X = LARGURA_TELA - 400;
-            int posPlayersY = ALTURA_TELA - 400;
-
-            // Obter texturas atuais baseadas na pose
+            // Sistema de renderização melhorado com animações suaves
             Texture2D texturaPlayer1 = ObterTexturaAtual(estado.jogador1);
             Texture2D texturaPlayer2 = ObterTexturaAtual(estado.jogador2);
 
-            // Efeito de movimento durante animação
-            int offsetX1 = 0, offsetY1 = 0;
-            int offsetX2 = 0, offsetY2 = 0;
+            // Obter source rectangles para sprites
+            Rectangle sourcePlayer1 = ObterSourceRectSprite(estado.jogador1);
+            Rectangle sourcePlayer2 = ObterSourceRectSprite(estado.jogador2);
 
+            float offsetX1 = 0, offsetY1 = 0;
+            float offsetX2 = 0, offsetY2 = 0;
+            float escalaX1 = 1.0f, escalaY1 = 1.0f;
+            float escalaX2 = 1.0f, escalaY2 = 1.0f;
+
+            // Animações Player 1 com movimentos mais fluidos
             if (estado.jogador1->animando)
             {
+                float progresso = estado.jogador1->timerAnimacao / estado.jogador1->duracaoAnimacao;
+                float intensidade = sin(progresso * 3.14159f);
+                float intensidadeQuadratica = intensidade * intensidade;
+
                 switch (estado.jogador1->poseAtual)
                 {
                 case POSE_SOCO:
-                    offsetX1 = 20; // Move para frente
+                    offsetX1 = estado.jogador1->viradoParaDireita ? (30 * intensidadeQuadratica) : (-30 * intensidadeQuadratica);
+                    escalaX1 = 1.0f + (0.1f * intensidade); // Leve aumento na largura
                     break;
                 case POSE_CHUTE:
-                    offsetX1 = 30;  // Move mais para frente
-                    offsetY1 = -10; // Pula um pouco
+                    offsetX1 = estado.jogador1->viradoParaDireita ? (40 * intensidadeQuadratica) : (-40 * intensidadeQuadratica);
+                    offsetY1 = -20 * intensidade;            // Salto suave
+                    escalaY1 = 1.0f + (0.15f * intensidade); // Esticamento vertical
                     break;
                 case POSE_PODER:
-                    offsetY1 = -15; // Levita
+                    // Levitação com movimento circular
+                    offsetY1 = -25 * sin(GetTime() * 6) - 10;
+                    offsetX1 = 8 * sin(GetTime() * 10);
+                    escalaX1 = 1.0f + 0.2f * sin(GetTime() * 8);
+                    escalaY1 = 1.0f + 0.1f * cos(GetTime() * 8);
                     break;
                 case POSE_DANO:
-                    offsetX1 = -15; // Recua
+                    offsetX1 = estado.jogador1->viradoParaDireita ? (-25 * intensidade) : (25 * intensidade);
+                    offsetY1 = 8 * sin(GetTime() * 20);     // Tremor rápido
+                    escalaX1 = 1.0f - (0.1f * intensidade); // Encolhimento
                     break;
                 case POSE_DEFESA:
-                    offsetX1 = -5; // Recua levemente
+                    offsetX1 = estado.jogador1->viradoParaDireita ? (-10 * intensidade) : (10 * intensidade);
+                    escalaY1 = 0.95f; // Postura mais baixa
+                    break;
+                case POSE_WALK:
+                    // Balanço natural da caminhada
+                    offsetY1 = 3 * sin(estado.jogador1->frameAtual * 1.5f);
                     break;
                 case POSE_IDLE:
                 default:
-                    // Sem movimento
+                    // Respiração mais natural
+                    offsetY1 = 3 * sin(GetTime() * 1.5f);
+                    escalaY1 = 1.0f + 0.02f * sin(GetTime() * 2);
                     break;
                 }
             }
+            else
+            {
+                // Animação idle quando não está atacando
+                offsetY1 = 3 * sin(GetTime() * 1.5f);
+                escalaY1 = 1.0f + 0.02f * sin(GetTime() * 2);
+            }
 
+            // Animações Player 2 com movimentos mais fluidos
             if (estado.jogador2->animando)
             {
+                float progresso = estado.jogador2->timerAnimacao / estado.jogador2->duracaoAnimacao;
+                float intensidade = sin(progresso * 3.14159f);
+                float intensidadeQuadratica = intensidade * intensidade;
+
                 switch (estado.jogador2->poseAtual)
                 {
                 case POSE_SOCO:
-                    offsetX2 = -20; // Move para frente (direção oposta)
+                    offsetX2 = estado.jogador2->viradoParaDireita ? (30 * intensidadeQuadratica) : (-30 * intensidadeQuadratica);
+                    escalaX2 = 1.0f + (0.1f * intensidade);
                     break;
                 case POSE_CHUTE:
-                    offsetX2 = -30; // Move mais para frente
-                    offsetY2 = -10; // Pula um pouco
+                    offsetX2 = estado.jogador2->viradoParaDireita ? (40 * intensidadeQuadratica) : (-40 * intensidadeQuadratica);
+                    offsetY2 = -20 * intensidade;
+                    escalaY2 = 1.0f + (0.15f * intensidade);
                     break;
                 case POSE_PODER:
-                    offsetY2 = -15; // Levita
+                    offsetY2 = -25 * sin(GetTime() * 6) - 10;
+                    offsetX2 = 8 * sin(GetTime() * 10);
+                    escalaX2 = 1.0f + 0.2f * sin(GetTime() * 8);
+                    escalaY2 = 1.0f + 0.1f * cos(GetTime() * 8);
                     break;
                 case POSE_DANO:
-                    offsetX2 = 15; // Recua
+                    offsetX2 = estado.jogador2->viradoParaDireita ? (-25 * intensidade) : (25 * intensidade);
+                    offsetY2 = 8 * sin(GetTime() * 20);
+                    escalaX2 = 1.0f - (0.1f * intensidade);
                     break;
                 case POSE_DEFESA:
-                    offsetX2 = 5; // Recua levemente (direção oposta)
+                    offsetX2 = estado.jogador2->viradoParaDireita ? (-10 * intensidade) : (10 * intensidade);
+                    escalaY2 = 0.95f;
+                    break;
+                case POSE_WALK:
+                    offsetY2 = 3 * sin(estado.jogador2->frameAtual * 1.5f);
                     break;
                 case POSE_IDLE:
                 default:
-                    // Sem movimento
+                    offsetY2 = 3 * sin(GetTime() * 1.5f);
+                    escalaY2 = 1.0f + 0.02f * sin(GetTime() * 2);
                     break;
                 }
             }
+            else
+            {
+                offsetY2 = 3 * sin(GetTime() * 1.5f);
+                escalaY2 = 1.0f + 0.02f * sin(GetTime() * 2);
+            }
 
-            // Efeito de brilho durante animação
+            // Efeito de brilho e cor durante animação (melhorado)
             Color corPlayer1 = WHITE;
             Color corPlayer2 = WHITE;
 
             if (estado.jogador1->animando)
             {
-                float intensidade = 0.5f + 0.5f * sin(GetTime() * 10);
+                float intensidade = 0.3f + 0.4f * sin(GetTime() * 12);
                 switch (estado.jogador1->poseAtual)
                 {
                 case POSE_PODER:
-                    corPlayer1 = ColorLerp(WHITE, PURPLE, intensidade * 0.5f);
+                    corPlayer1 = ColorLerp(WHITE, estado.jogador1->corHabilidade, intensidade * 0.7f);
                     break;
                 case POSE_SOCO:
-                    corPlayer1 = ColorLerp(WHITE, YELLOW, intensidade * 0.3f);
+                    corPlayer1 = ColorLerp(WHITE, YELLOW, intensidade * 0.4f);
                     break;
                 case POSE_CHUTE:
-                    corPlayer1 = ColorLerp(WHITE, ORANGE, intensidade * 0.3f);
+                    corPlayer1 = ColorLerp(WHITE, ORANGE, intensidade * 0.4f);
                     break;
                 case POSE_DANO:
-                    corPlayer1 = ColorLerp(WHITE, RED, intensidade * 0.4f);
+                    corPlayer1 = ColorLerp(WHITE, RED, intensidade * 0.6f);
                     break;
                 case POSE_DEFESA:
-                    corPlayer1 = ColorLerp(WHITE, BLUE, intensidade * 0.2f);
+                    corPlayer1 = ColorLerp(WHITE, BLUE, intensidade * 0.3f);
                     break;
                 case POSE_IDLE:
                 default:
-                    // Sem efeito de cor
                     break;
                 }
             }
 
             if (estado.jogador2->animando)
             {
-                float intensidade = 0.5f + 0.5f * sin(GetTime() * 10);
+                float intensidade = 0.3f + 0.4f * sin(GetTime() * 12);
                 switch (estado.jogador2->poseAtual)
                 {
                 case POSE_PODER:
-                    corPlayer2 = ColorLerp(WHITE, PURPLE, intensidade * 0.5f);
+                    corPlayer2 = ColorLerp(WHITE, estado.jogador2->corHabilidade, intensidade * 0.7f);
                     break;
                 case POSE_SOCO:
-                    corPlayer2 = ColorLerp(WHITE, YELLOW, intensidade * 0.3f);
+                    corPlayer2 = ColorLerp(WHITE, YELLOW, intensidade * 0.4f);
                     break;
                 case POSE_CHUTE:
-                    corPlayer2 = ColorLerp(WHITE, ORANGE, intensidade * 0.3f);
+                    corPlayer2 = ColorLerp(WHITE, ORANGE, intensidade * 0.4f);
                     break;
                 case POSE_DANO:
-                    corPlayer2 = ColorLerp(WHITE, RED, intensidade * 0.4f);
+                    corPlayer2 = ColorLerp(WHITE, RED, intensidade * 0.6f);
                     break;
                 case POSE_DEFESA:
-                    corPlayer2 = ColorLerp(WHITE, BLUE, intensidade * 0.2f);
+                    corPlayer2 = ColorLerp(WHITE, BLUE, intensidade * 0.3f);
                     break;
                 case POSE_IDLE:
                 default:
-                    // Sem efeito de cor
                     break;
                 }
             }
 
-            DrawTexturePro(texturaPlayer1,
-                           (Rectangle){0, 0, texturaPlayer1.width, texturaPlayer1.height},
-                           (Rectangle){posPlayer1X + offsetX1, posPlayersY + offsetY1, 200, 300},
-                           (Vector2){0, 0}, 0.0f, corPlayer1);
+            // Renderizar personagens com sistema avançado de animação
+            float larguraBase = 200.0f;
+            float alturaBase = 280.0f;
 
-            DrawTexturePro(texturaPlayer2,
-                           (Rectangle){0, 0, texturaPlayer2.width, texturaPlayer2.height},
-                           (Rectangle){posPlayer2X + offsetX2, posPlayersY + offsetY2, 200, 300},
-                           (Vector2){0, 0}, 0.0f, corPlayer2);
+            // Aplicar escalas às dimensões
+            float larguraPersonagem1 = larguraBase * escalaX1;
+            float alturaPersonagem1 = alturaBase * escalaY1;
+            float larguraPersonagem2 = larguraBase * escalaX2;
+            float alturaPersonagem2 = alturaBase * escalaY2;
 
-            // Desenhar efeitos de partículas
+            // Calcular posições de renderização com offsets suaves
+            float renderX1 = estado.jogador1->posicao.x - larguraPersonagem1 / 2 + offsetX1;
+            float renderY1 = estado.jogador1->posicao.y - alturaPersonagem1 + offsetY1;
+            float renderX2 = estado.jogador2->posicao.x - larguraPersonagem2 / 2 + offsetX2;
+            float renderY2 = estado.jogador2->posicao.y - alturaPersonagem2 + offsetY2;
+
+            // Player 1 - com sistema de flip melhorado
+            Rectangle destPlayer1 = {renderX1, renderY1, larguraPersonagem1, alturaPersonagem1};
+            Vector2 origemPlayer1 = {0, 0};
+
+            if (!estado.jogador1->viradoParaDireita)
+            {
+                destPlayer1.width = -larguraPersonagem1; // Flip horizontal
+                origemPlayer1.x = larguraPersonagem1;    // Ajustar origem para flip
+            }
+
+            DrawTexturePro(texturaPlayer1, sourcePlayer1, destPlayer1, origemPlayer1, 0.0f, corPlayer1);
+
+            // Player 2 - com sistema de flip melhorado
+            Rectangle destPlayer2 = {renderX2, renderY2, larguraPersonagem2, alturaPersonagem2};
+            Vector2 origemPlayer2 = {0, 0};
+
+            if (!estado.jogador2->viradoParaDireita)
+            {
+                destPlayer2.width = -larguraPersonagem2; // Flip horizontal
+                origemPlayer2.x = larguraPersonagem2;    // Ajustar origem para flip
+            }
+
+            DrawTexturePro(texturaPlayer2, sourcePlayer2, destPlayer2, origemPlayer2, 0.0f, corPlayer2);
+
+            // Efeitos visuais adicionais durante ataques especiais
+            if (estado.jogador1->poseAtual == POSE_PODER && estado.jogador1->animando)
+            {
+                // Aura de poder para Player 1
+                float raioAura = 80 + 20 * sin(GetTime() * 10);
+                DrawCircleLines(estado.jogador1->posicao.x, estado.jogador1->posicao.y - 100, raioAura,
+                                Fade(estado.jogador1->corHabilidade, 0.6f));
+                DrawCircleLines(estado.jogador1->posicao.x, estado.jogador1->posicao.y - 100, raioAura - 10,
+                                Fade(estado.jogador1->corHabilidade, 0.3f));
+            }
+
+            if (estado.jogador2->poseAtual == POSE_PODER && estado.jogador2->animando)
+            {
+                // Aura de poder para Player 2
+                float raioAura = 80 + 20 * sin(GetTime() * 10);
+                DrawCircleLines(estado.jogador2->posicao.x, estado.jogador2->posicao.y - 100, raioAura,
+                                Fade(estado.jogador2->corHabilidade, 0.6f));
+                DrawCircleLines(estado.jogador2->posicao.x, estado.jogador2->posicao.y - 100, raioAura - 10,
+                                Fade(estado.jogador2->corHabilidade, 0.3f));
+            }
+
+            // Desenhar hitboxes para debug (opcional - remover depois)
+            if (false) // Mude para true para ver as hitboxes
+            {
+                DrawRectangleLines(estado.jogador1->hitbox.x, estado.jogador1->hitbox.y,
+                                   estado.jogador1->hitbox.width, estado.jogador1->hitbox.height, GREEN);
+                DrawRectangleLines(estado.jogador2->hitbox.x, estado.jogador2->hitbox.y,
+                                   estado.jogador2->hitbox.width, estado.jogador2->hitbox.height, RED);
+
+                // Desenhar alcance de ataque se atacando
+                if (estado.jogador1->poseAtual == POSE_SOCO || estado.jogador1->poseAtual == POSE_CHUTE || estado.jogador1->poseAtual == POSE_PODER)
+                {
+                    AtualizarAlcanceAtaque(estado.jogador1);
+                    DrawRectangleLines(estado.jogador1->alcanceAtaque.x, estado.jogador1->alcanceAtaque.y,
+                                       estado.jogador1->alcanceAtaque.width, estado.jogador1->alcanceAtaque.height, BLUE);
+                }
+                if (estado.jogador2->poseAtual == POSE_SOCO || estado.jogador2->poseAtual == POSE_CHUTE || estado.jogador2->poseAtual == POSE_PODER)
+                {
+                    AtualizarAlcanceAtaque(estado.jogador2);
+                    DrawRectangleLines(estado.jogador2->alcanceAtaque.x, estado.jogador2->alcanceAtaque.y,
+                                       estado.jogador2->alcanceAtaque.width, estado.jogador2->alcanceAtaque.height, YELLOW);
+                }
+            }
+
             DesenharParticulas(&estado.particulasImpacto);
 
-            // Desenhar HUD
             DesenharHUD(&estado, fontePixel);
 
-            // Efeito de flash na tela
             if (estado.flashTela > 0)
             {
                 Color corFlash = Fade(WHITE, estado.flashTela);
                 DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, corFlash);
             }
 
-            // Controles de luta (dinâmicos baseados na configuração)
-            const char *controlesP1 = TextFormat("Player 1: %s=Poder, %s=Soco, %s=Chute",
-                                                 ObterNomeTecla(config.teclaPoderP1),
-                                                 ObterNomeTecla(config.teclaSocoP1),
-                                                 ObterNomeTecla(config.teclaChute1));
-            DrawText(controlesP1, 50, ALTURA_TELA - 80, 18, BLUE);
+            // Painel de controles melhorado
+            DrawRectangleRounded((Rectangle){30, ALTURA_TELA - 140, LARGURA_TELA - 60, 110}, 0.1f, 10, Fade(BLACK, 0.8f));
+            DrawRectangleRoundedLines((Rectangle){30, ALTURA_TELA - 140, LARGURA_TELA - 60, 110}, 0.1f, 10, WHITE);
 
-            const char *controlesP2 = TextFormat("Player 2: %s=Poder, %s=Soco, %s=Chute",
-                                                 ObterNomeTecla(config.teclaPoderP2),
+            const char *controlesP1 = TextFormat("P1: %s/%s=Mover | %s=Soco | %s=Chute | %s=ESPECIAL",
+                                                 ObterNomeTecla(config.teclaEsquerdaP1),
+                                                 ObterNomeTecla(config.teclaDireitaP1),
+                                                 ObterNomeTecla(config.teclaSocoP1),
+                                                 ObterNomeTecla(config.teclaChute1),
+                                                 ObterNomeTecla(config.teclaPoderP1));
+            DrawTextEx(fontePixel, controlesP1, (Vector2){50, ALTURA_TELA - 125}, 16, 2, BLUE);
+
+            const char *controlesP2 = TextFormat("P2: %s/%s=Mover | %s=Soco | %s=Chute | %s=ESPECIAL",
+                                                 ObterNomeTecla(config.teclaEsquerdaP2),
+                                                 ObterNomeTecla(config.teclaDireitaP2),
                                                  ObterNomeTecla(config.teclaSocoP2),
-                                                 ObterNomeTecla(config.teclaChute2));
-            DrawText(controlesP2, 50, ALTURA_TELA - 60, 18, RED);
-            DrawText("ESC: Voltar ao menu", 50, ALTURA_TELA - 40, 18, WHITE);
+                                                 ObterNomeTecla(config.teclaChute2),
+                                                 ObterNomeTecla(config.teclaPoderP2));
+            DrawTextEx(fontePixel, controlesP2, (Vector2){50, ALTURA_TELA - 105}, 16, 2, RED);
+
+            DrawTextEx(fontePixel, "APROXIME-SE do oponente para atacar! Acumule poder com ataques básicos!", (Vector2){50, ALTURA_TELA - 85}, 18, 2, YELLOW);
+
+            DrawTextEx(fontePixel, "ESC: Voltar ao menu", (Vector2){LARGURA_TELA / 2 - 100, ALTURA_TELA - 45}, 16, 2, LIGHTGRAY);
         }
 
         EndDrawing();
     }
 
-    // Cleanup personagens
     for (int i = 0; i < MAX_PERSONAGENS; i++)
     {
         UnloadTexture(personagens[i].textura);
         UnloadTexture(personagens[i].texturaLuta);
-        UnloadTexture(personagens[i].texturaSoco);
-        UnloadTexture(personagens[i].texturaChute);
-        UnloadTexture(personagens[i].texturaPoder);
     }
 
-    // Cleanup mapas
     for (int i = 0; i < MAX_MAPAS; i++)
     {
         UnloadTexture(mapas[i].textura);
     }
 
-    // Cleanup demais texturas
     UnloadTexture(fundoMenu);
     UnloadTexture(fundoSelecao);
     UnloadTexture(logo);
     UnloadFont(fontePixel);
 
-    // Cleanup áudio
     UnloadMusicStream(musicaFundo);
     CloseAudioDevice();
 

@@ -3,6 +3,7 @@
 typedef enum
 {
     POSE_IDLE,
+    POSE_WALK,
     POSE_SOCO,
     POSE_CHUTE,
     POSE_PODER,
@@ -38,17 +39,35 @@ typedef struct
 
     // Texturas para animações de luta
     Texture2D texturaLuta;
+    Texture2D texturaWalk;
     Texture2D texturaSoco;
     Texture2D texturaChute;
     Texture2D texturaPoder;
     Texture2D texturaDefesa;
     Texture2D texturaDano;
 
+    // Sistema de posição e movimento
+    Vector2 posicao;
+    Vector2 velocidade;
+    float velocidadeMaxima;
+    bool viradoParaDireita;
+    Rectangle hitbox;
+    Rectangle alcanceAtaque;
+
+    // Sistema de sprites (para spritesheets)
+    int frameAtual;
+    int totalFrames;
+    float timerFrame;
+    float duracaoFrame;
+    Rectangle frameSource;
+
     // Sistema de animação
     TipoPose poseAtual;
     float timerAnimacao;
     float duracaoAnimacao;
     bool animando;
+    bool podeAtacar;
+    bool podeSeMovimentar;
 
     // Stats de combate
     int vidaMaxima;
@@ -58,6 +77,11 @@ typedef struct
     int danoSoco;
     int danoChute;
     int danoPoder;
+
+    // Alcance dos ataques
+    float alcanceSoco;
+    float alcanceChute;
+    float alcancePoder;
 } Personagem;
 
 typedef struct
@@ -98,6 +122,11 @@ typedef struct
     SistemaParticulas particulasImpacto;
     float flashTela;
     float tremor;
+
+    // Limites da arena
+    float limiteEsquerdo;
+    float limiteDireito;
+    float chao;
 } EstadoJogo;
 
 typedef enum
