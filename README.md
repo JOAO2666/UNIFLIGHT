@@ -1,4 +1,6 @@
-# UNI FIGHT - Jogo de Luta
+# 🥊 UNI FIGHT - Jogo de Luta Universitário
+
+Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens únicos com habilidades elementais.
 
 ## 🎓 Projeto Acadêmico
 - **Disciplina**: Algoritmos e Programação
@@ -7,136 +9,136 @@
 
 > **Documentação Acadêmica Completa**: Consulte `DOCUMENTACAO_ACADEMICA.md`
 
-## Melhorias Implementadas
+## 🚀 COMPILAÇÃO RÁPIDA - NOTEPAD++
 
-### 📋 Resumo dos Personagens
-Agora cada personagem possui informações detalhadas que são exibidas na tela de seleção:
+### Para Notepad++ (Método Simples):
+1. **Instale MinGW-w64** e **Raylib**
+2. **Abra `unifight.c` no Notepad++**
+3. **Pressione F5** e configure:
+   ```
+   cmd /k cd /d "$(CURRENT_DIRECTORY)" && compile_simple.bat
+   ```
+4. **Compile e execute!**
 
-#### Personagens Disponíveis:
-1. **Kael** (Fogo) - Homem de pele morena, corpo forte e definido. Treinou com monges e feiticeiros, aprendendo a controlar o fogo.
-2. **Dandara** (Gelo) - Mulher esbelta com cabelos rosas. Ex-mercenária que se tornou caçadora de recompensas.
-3. **Valéria** (Gelo) - Porte ágil, cabelos castanho-escuros curtos. Caçadora de segredos em busca de vingança.
-4. **Tim** (Gelo) - Jovem guerreiro das montanhas que usa a força apenas para proteger outros.
-5. **Joana** (Fogo) - Perita em artes marciais que usa suas habilidades para deter inimigos.
-6. **Yuri** (Fogo) - Ex-capitão da guarda que agora vive como mercenário.
+> 📋 **Guia Completo**: Veja `NOTEPAD_SETUP.md` para instruções detalhadas
 
-### 🗺️ Sistema de Mapas
-Implementado sistema de seleção de mapas com 6 arenas diferentes:
+### Scripts Disponíveis:
+- `compile_simple.bat` - Compilação rápida
+- `compile_notepad.bat` - Compilação com detecção automática
 
-1. **Arena Vulcânica** - Cercada por lava e rochas ígneas. Ideal para lutadores de fogo.
-2. **Caverna Cristalina** - Caverna mística com cristais de gelo brilhantes. Favorece usuários de gelo.
-3. **Templo Gelado** - Antigo templo nas montanhas geladas. Ambiente sagrado e equilibrado.
-4. **Floresta Ancestral** - Floresta antiga com ruínas místicas. Energia natural balanceada.
-5. **Coliseu Neutro** - Arena equilibrada sem vantagens elementais para todos os lutadores.
-6. **Santuário Perdido** - Ruínas de um antigo santuário com poderes místicos adormecidos.
+## ✨ Melhorias Recentes Implementadas
 
-### 🎮 Controles Completos
+### 🎮 Interface de Combate Aprimorada
+- **HUD Redesenhado**: Interface mais limpa e profissional com gradientes e efeitos visuais
+- **Barras de Vida Melhoradas**: 
+  - Gradientes de cor baseados na porcentagem de vida
+  - Efeito de brilho quando a vida está alta
+  - Nomes dos jogadores exibidos acima das barras
+  - Sombras nos textos para melhor legibilidade
+- **Barras de Poder Aprimoradas**:
+  - Efeito pulsante quando o especial está disponível
+  - Indicador visual "ESPECIAL PRONTO!" com animação
+  - Partículas visuais ao redor da barra quando carregada
 
-#### Seleção de Personagens:
-- **Player 1**: A/D para navegar personagens, ENTER para confirmar
-- **Player 2**: ←/→ para navegar personagens, SPACE para confirmar
-- **BACKSPACE**: Voltar ao menu
+### 👥 Organização dos Personagens
+- **Renderização Otimizada**: Personagens melhor posicionados e proporcionais na tela
+- **Efeitos Visuais Melhorados**:
+  - Sombras realistas sob os personagens
+  - Auras de poder com múltiplos círculos animados
+  - Animações mais fluidas e responsivas
+- **Sistema de Animação Aperfeiçoado**: Movimentos mais naturais e dinâmicos
 
-#### Seleção de Mapas:
-- **←/→**: Navegar entre mapas
-- **ENTER**: Confirmar mapa selecionado
-- **BACKSPACE**: Voltar para seleção de personagens
+### 🧹 Organização da Pasta
+- Removidos arquivos desnecessários e documentações obsoletas
+- Estrutura mais limpa e organizada
+- Mantidos apenas os arquivos essenciais para o funcionamento
 
-#### Sistema de Luta:
-- **Player 1**: Q=Poder Especial, E=Soco, R=Chute
-- **Player 2**: P=Poder Especial, O=Soco, I=Chute
-- **ESC**: Voltar ao menu principal
+## 🎯 Características Principais
 
-### ✨ Interface Melhorada
-- **Tela de Seleção**: Informações detalhadas dos personagens com confirmação visual
-- **Tela de Mapas**: Preview completo dos mapas com descrições
-- **Tela de Luta**: HUD completo com barras de vida e poder
-- **Sistema de Rounds**: Timer de 60 segundos por round, 3 rounds por luta
-- **Cores Distintivas**: Fogo = Vermelho, Gelo = Azul, Confirmado = Verde
+### Personagens Disponíveis
+1. **Kael** - Especialista em Fogo
+2. **Dandara** - Mestre do Gelo  
+3. **Valéria** - Combatente de Gelo
+4. **Tim** - Guerreiro das Montanhas (Gelo)
+5. **Joana** - Lutadora de Fogo
+6. **Yuri** - Mercenário de Fogo
 
+### Sistema de Combate
+- **Ataques Básicos**: Soco (20 dano) e Chute (30 dano)
+- **Poder Especial**: Ataque devastador (50 dano) - requer 50 pontos de poder
+- **Sistema de Proximidade**: É necessário estar próximo para atacar
+- **Acúmulo de Poder**: Ataques básicos geram pontos de poder
 
+### Mapas de Batalha
+- 6 arenas únicas com temas diferentes
+- Desde vulcões até templos gelados
+- Cada mapa com sua própria atmosfera visual
 
-### 🔧 Estruturas de Dados
-Expandidas as estruturas para incluir:
-- História do personagem
-- Tipo de habilidade (Fogo/Gelo)
-- Cor da habilidade
-- Sistema de mapas com descrições
+## 🎮 Controles
 
-### 💪 Sistema de Combate (Conforme Documentação)
-- **Soco**: 10 XP de dano
-- **Chute**: 20 XP de dano
-- **Habilidade Gelo**: 50 XP de dano
-- **Habilidade Fogo**: 50 XP de dano
-- **3 Rounds** de 60 segundos cada
+### Player 1
+- **A/D**: Movimento
+- **E**: Soco
+- **R**: Chute  
+- **Q**: Poder Especial (quando disponível)
 
-### 🎬 Sistema de Animação Avançado
-Implementado sistema completo de animação com troca de sprites em tempo real:
+### Player 2
+- **←/→**: Movimento
+- **O**: Soco
+- **I**: Chute
+- **P**: Poder Especial (quando disponível)
 
-#### Poses Dinâmicas:
-- **POSE_SOCO**: Animação rápida (0.3s) com movimento para frente
-- **POSE_CHUTE**: Animação com salto (0.5s) e movimento amplo
-- **POSE_PODER**: Animação especial (0.8s) com levitação
-- **POSE_DANO**: Reação ao receber ataques
+## 🛠️ Compilação Detalhada
 
-#### Efeitos Visuais:
-- **Sistema de Partículas**: Até 50 partículas simultâneas com física
-- **Tremor de Tela**: Proporcional ao impacto dos golpes
-- **Flash de Tela**: Efeito especial para ataques de poder
-- **Brilho dos Personagens**: Cores pulsantes durante animações
+### Requisitos:
+- **MinGW-w64** (GCC para Windows)
+- **Raylib** (biblioteca gráfica)
+- **Notepad++** (recomendado)
 
-#### Formato de Arquivos:
+### Configuração da Raylib:
+1. Baixe de: https://github.com/raysan5/raylib/releases
+2. Extraia em uma dessas pastas:
+   - `unifight/raylib/` (pasta local)
+   - `C:\raylib\` (pasta global)
+
+## 📁 Estrutura de Arquivos
+
 ```
-personagens/[NomePersonagem]_[pose].png
-Exemplo: joao_soco.png, Dandara_chute.png
+unifight/
+├── unifight.c          # Código principal do jogo
+├── structs.c           # Estruturas de dados
+├── compile_simple.bat  # Compilação rápida
+├── compile_notepad.bat # Compilação com detecção automática
+├── NOTEPAD_SETUP.md    # Guia do Notepad++
+├── personagens/        # Imagens dos personagens
+├── frames/            # Mapas de batalha
+├── fontes/            # Arquivos de fonte
+├── musicas/           # Arquivos de áudio
+└── README.md          # Esta documentação
 ```
 
-#### Sistema Anti-Spam:
-- Personagens não podem atacar enquanto animando
-- Cada golpe tem duração específica
-- Efeitos visuais únicos por tipo de ataque
+## 🎨 Recursos Visuais
 
-Para documentação completa, consulte `ANIMACOES.md`
+- **Animações Fluidas**: Sistema de sprites com transições suaves
+- **Efeitos Especiais**: Partículas, brilhos e auras durante ataques
+- **Interface Responsiva**: HUD adaptativo com feedback visual
+- **Personagens Únicos**: Cada lutador com visual e habilidades distintas
 
-### 🎛️ Sistema de Opções Completo
-Implementado menu de configurações avançado com controles personalizáveis:
+## 🎵 Recursos de Áudio
 
-#### Configuração de Controles:
-- **Player 1**: Q/E/R (padrão) → Totalmente configurável
-- **Player 2**: P/O/I (padrão) → Totalmente configurável
-- **Processo Guiado**: Configure 3 teclas em sequência
-- **Reset**: Restaurar controles padrão a qualquer momento
+- Música de fundo ambiente
+- Efeitos sonoros para ataques (quando implementados)
+- Sistema de volume configurável
 
-#### Controle de Volume:
-- **Música de Fundo**: 0-100% com barra visual
-- **Efeitos Sonoros**: 0-100% (preparado para implementação)
-- **Ajuste em Tempo Real**: Setas ←/→ para controlar
-- **Feedback Visual**: Barras de progresso + porcentagem
+## ⚙️ Opções e Configurações
 
-#### Música de Fundo:
-- **Arquivo**: `musicas/menu_background.mp3`
-- **Tipo**: Música calma e relaxante
-- **Volume**: Controlável via menu de opções
-- **Loop Contínuo**: Durante toda a experiência de jogo
+- Configuração de controles personalizáveis
+- Ajuste de volume de música e efeitos
+- Sistema de salvamento de configurações
 
-#### Interface de Opções:
-- **Navegação**: ↑/↓ para navegar, ENTER para selecionar
-- **Controles Dinâmicos**: Tela de luta mostra teclas configuradas
-- **Cancelamento**: ESC para cancelar configurações
-- **Voltar**: BACKSPACE para retornar ao menu
+---
 
-Para documentação completa, consulte `MENU_OPCOES.md`
-
-## Como Executar
-1. Abra o `unifight.c` no **Notepad++ for Raylib**
-2. Pressione `F5` ou clique em "Run" para executar o jogo
-3. **Resolução**: 1920x1080 (Full HD Horizontal)
-4. Certifique-se de que todas as imagens estão nas pastas corretas:
-   - `personagens/` - Imagens dos perfis dos personagens
-   - `frames/` - Imagens dos mapas de luta
-   - `fontes/` - Fonte utilizada no jogo
-
-
+**Desenvolvido com paixão para a comunidade universitária! 🎓**
 
 ## Próximos Passos
 - ✅ ~~Implementar tela de luta real~~ **CONCLUÍDO**
