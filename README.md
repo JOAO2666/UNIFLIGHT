@@ -146,5 +146,7 @@ unifight/
 - ✅ ~~Animações dos personagens~~ **CONCLUÍDO**
 - ✅ ~~Sistema de partículas e efeitos visuais~~ **CONCLUÍDO**
 - 🔄 Efeitos sonoros (estrutura preparada)
+- 🔄 Animação dos personagens andando, se movendo e etc.
 - 🔄 Sistema de pontuação por rounds
-- 🔄 Mais poses personalizadas para cada personagem 
+- 🔄 Mais poses personalizadas para cada personagem
+
