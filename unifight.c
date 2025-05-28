@@ -505,71 +505,111 @@ void DesenharInfoPersonagem(Personagem personagem, int x, int y, int largura, in
     }
 }
 
-void DesenharBarraVida(int x, int y, int largura, int altura, int vidaAtual, int vidaMaxima, Color cor)
+void DesenharBarraVida(int x, int y, int largura, int altura, int vidaAtual, int vidaMaxima, Color cor, const char *nomeJogador)
 {
-    // Fundo da barra
-    DrawRectangle(x, y, largura, altura, DARKGRAY);
+    // Fundo da barra com gradiente
+    DrawRectangleGradientV(x, y, largura, altura, Fade(DARKGRAY, 0.8f), DARKGRAY);
 
-    // Barra de vida com gradiente
+    // Barra de vida com gradiente baseado na porcentagem
     float porcentagem = (float)vidaAtual / (float)vidaMaxima;
     int larguraVida = (int)(largura * porcentagem);
 
-    // Cor da vida baseada na porcentagem
-    Color corVida = cor;
-    if (porcentagem < 0.3f)
-        corVida = RED;
-    else if (porcentagem < 0.6f)
-        corVida = ORANGE;
+    // Cor da vida baseada na porcentagem com gradiente
+    Color corVida;
+    if (porcentagem > 0.6f)
+        corVida = ColorLerp(YELLOW, GREEN, (porcentagem - 0.6f) / 0.4f);
+    else if (porcentagem > 0.3f)
+        corVida = ColorLerp(RED, ORANGE, (porcentagem - 0.3f) / 0.3f);
     else
-        corVida = GREEN;
+        corVida = ColorLerp((Color){128, 0, 0, 255}, RED, porcentagem / 0.3f); // Substituindo DARKRED por cor RGB
 
-    DrawRectangle(x, y, larguraVida, altura, corVida);
+    // Desenhar barra com efeito de gradiente
+    DrawRectangleGradientH(x, y, larguraVida, altura, corVida, Fade(corVida, 0.7f));
 
-    // Borda
+    // Efeito de brilho na barra
+    if (porcentagem > 0.8f)
+    {
+        float brilho = 0.3f + 0.2f * sin(GetTime() * 6);
+        DrawRectangleGradientH(x, y, larguraVida, altura / 3, Fade(WHITE, brilho), BLANK);
+    }
+
+    // Borda estilizada
+    DrawRectangleLines(x - 1, y - 1, largura + 2, altura + 2, BLACK);
     DrawRectangleLines(x, y, largura, altura, WHITE);
 
-    // Texto da vida
+    // Texto da vida centralizado e estilizado
     const char *textoVida = TextFormat("%d/%d", vidaAtual, vidaMaxima);
-    int larguraTexto = MeasureText(textoVida, 20);
-    DrawText(textoVida, x + largura / 2 - larguraTexto / 2, y + altura / 2 - 10, 20, WHITE);
+    int larguraTexto = MeasureText(textoVida, 16);
+
+    // Sombra do texto
+    DrawText(textoVida, x + largura / 2 - larguraTexto / 2 + 1, y + altura / 2 - 8 + 1, 16, BLACK);
+    // Texto principal
+    DrawText(textoVida, x + largura / 2 - larguraTexto / 2, y + altura / 2 - 8, 16, WHITE);
+
+    // Nome do jogador acima da barra
+    int larguraNome = MeasureText(nomeJogador, 20);
+    DrawText(nomeJogador, x + largura / 2 - larguraNome / 2 + 1, y - 26, 20, BLACK); // Sombra
+    DrawText(nomeJogador, x + largura / 2 - larguraNome / 2, y - 25, 20, cor);
 }
 
-void DesenharBarraPoder(int x, int y, int largura, int altura, int poderAtual, int poderMaximo)
+void DesenharBarraPoder(int x, int y, int largura, int altura, int poderAtual, int poderMaximo, Color corPersonagem)
 {
     // Fundo da barra
-    DrawRectangle(x, y, largura, altura, DARKGRAY);
+    DrawRectangleGradientV(x, y, largura, altura, Fade(DARKGRAY, 0.8f), DARKGRAY);
 
-    // Barra de poder com efeito brilhante
+    // Barra de poder com efeito pulsante quando disponível
     float porcentagem = (float)poderAtual / (float)poderMaximo;
     int larguraPoder = (int)(largura * porcentagem);
 
-    // Cor do poder com efeito pulsante
-    Color corPoder = BLUE;
-    if (poderAtual >= 50) // Pode usar poder especial
+    // Cor do poder com efeito especial
+    Color corPoder;
+    if (poderAtual >= 50)
     {
-        float pulso = 0.7f + 0.3f * sin(GetTime() * 8);
+        // Efeito pulsante quando especial está disponível
+        float pulso = 0.6f + 0.4f * sin(GetTime() * 10);
         corPoder = ColorLerp(BLUE, YELLOW, pulso);
+
+        // Efeito de partículas visuais
+        for (int i = 0; i < 3; i++)
+        {
+            float offset = i * 2.0f;
+            float alpha = 0.3f * sin(GetTime() * 8 + offset);
+            DrawRectangle(x + larguraPoder - 5, y - 2, 10, altura + 4, Fade(YELLOW, alpha));
+        }
+    }
+    else
+    {
+        corPoder = ColorLerp(DARKBLUE, BLUE, porcentagem);
     }
 
-    DrawRectangle(x, y, larguraPoder, altura, corPoder);
+    DrawRectangleGradientH(x, y, larguraPoder, altura, corPoder, Fade(corPoder, 0.6f));
 
     // Linha indicadora dos 50 pontos (metade da barra)
     int linhaMeio = x + largura / 2;
-    DrawLine(linhaMeio, y, linhaMeio, y + altura, WHITE);
+    DrawLine(linhaMeio, y, linhaMeio, y + altura, Fade(WHITE, 0.8f));
+    DrawLine(linhaMeio - 1, y, linhaMeio - 1, y + altura, Fade(BLACK, 0.5f));
 
-    // Borda
+    // Borda estilizada
+    DrawRectangleLines(x - 1, y - 1, largura + 2, altura + 2, BLACK);
     DrawRectangleLines(x, y, largura, altura, WHITE);
 
     // Texto do poder
     const char *textoPoder = TextFormat("%d/%d", poderAtual, poderMaximo);
-    int larguraTexto = MeasureText(textoPoder, 16);
-    DrawText(textoPoder, x + largura / 2 - larguraTexto / 2, y + altura / 2 - 8, 16, WHITE);
+    int larguraTexto = MeasureText(textoPoder, 14);
+
+    // Sombra do texto
+    DrawText(textoPoder, x + largura / 2 - larguraTexto / 2 + 1, y + altura / 2 - 7 + 1, 14, BLACK);
+    DrawText(textoPoder, x + largura / 2 - larguraTexto / 2, y + altura / 2 - 7, 14, WHITE);
 
     // Indicador de poder especial disponível
     if (poderAtual >= 50)
     {
-        const char *textoEspecial = "ESPECIAL!";
-        DrawText(textoEspecial, x + largura + 10, y + altura / 2 - 8, 16, YELLOW);
+        const char *textoEspecial = "ESPECIAL PRONTO!";
+        float alpha = 0.7f + 0.3f * sin(GetTime() * 6);
+        Color corTexto = ColorLerp(YELLOW, WHITE, alpha);
+
+        DrawText(textoEspecial, x + largura + 15 + 1, y + altura / 2 - 7 + 1, 14, BLACK); // Sombra
+        DrawText(textoEspecial, x + largura + 15, y + altura / 2 - 7, 14, corTexto);
     }
 }
 
@@ -579,26 +619,69 @@ void DesenharHUD(EstadoJogo *estado, Font fonte)
     if (!estado->jogador1 || !estado->jogador2)
         return;
 
-    // Player 1 HUD (lado esquerdo)
-    DrawTextEx(fonte, estado->jogador1->nome, (Vector2){50, 50}, 36, 2, BLUE);
-    DrawTextEx(fonte, "VIDA:", (Vector2){50, 90}, 24, 2, WHITE);
-    DesenharBarraVida(120, 90, 300, 25, estado->jogador1->vidaAtual, estado->jogador1->vidaMaxima, RED);
-    DrawTextEx(fonte, "PODER:", (Vector2){50, 125}, 24, 2, WHITE);
-    DesenharBarraPoder(120, 125, 300, 20, estado->jogador1->poderAtual, estado->jogador1->poderMaximo);
+    // Painel superior para HUD
+    DrawRectangleGradientV(0, 0, LARGURA_TELA, 180, Fade(BLACK, 0.7f), Fade(BLACK, 0.3f));
+    DrawLine(0, 180, LARGURA_TELA, 180, Fade(WHITE, 0.5f));
 
-    // Player 2 HUD (lado direito)
-    DrawTextEx(fonte, estado->jogador2->nome, (Vector2){LARGURA_TELA - 450, 50}, 36, 2, RED);
-    DrawTextEx(fonte, "VIDA:", (Vector2){LARGURA_TELA - 450, 90}, 24, 2, WHITE);
-    DesenharBarraVida(LARGURA_TELA - 420, 90, 300, 25, estado->jogador2->vidaAtual, estado->jogador2->vidaMaxima, RED);
-    DrawTextEx(fonte, "PODER:", (Vector2){LARGURA_TELA - 450, 125}, 24, 2, WHITE);
-    DesenharBarraPoder(LARGURA_TELA - 420, 125, 300, 20, estado->jogador2->poderAtual, estado->jogador2->poderMaximo);
+    // === PLAYER 1 HUD (lado esquerdo) ===
+    int margemEsquerda = 30;
+    int larguraBarra = 350;
+    int alturaBarra = 25;
 
-    // Informações centrais
+    DesenharBarraVida(margemEsquerda, 45, larguraBarra, alturaBarra,
+                      estado->jogador1->vidaAtual, estado->jogador1->vidaMaxima,
+                      BLUE, estado->jogador1->nome);
+
+    // Barra de poder do Player 1
+    DesenharBarraPoder(margemEsquerda, 85, larguraBarra, 20,
+                       estado->jogador1->poderAtual, estado->jogador1->poderMaximo,
+                       estado->jogador1->corHabilidade);
+
+    // Habilidade do Player 1
+    const char *habilidadeP1 = TextFormat("Habilidade: %s", estado->jogador1->habilidade);
+    DrawTextEx(fonte, habilidadeP1, (Vector2){margemEsquerda, 115}, 18, 2, estado->jogador1->corHabilidade);
+
+    // === PLAYER 2 HUD (lado direito) ===
+    int margemDireita = LARGURA_TELA - larguraBarra - 30;
+
+    DesenharBarraVida(margemDireita, 45, larguraBarra, alturaBarra,
+                      estado->jogador2->vidaAtual, estado->jogador2->vidaMaxima,
+                      RED, estado->jogador2->nome);
+
+    // Barra de poder do Player 2
+    DesenharBarraPoder(margemDireita, 85, larguraBarra, 20,
+                       estado->jogador2->poderAtual, estado->jogador2->poderMaximo,
+                       estado->jogador2->corHabilidade);
+
+    // Habilidade do Player 2
+    const char *habilidadeP2 = TextFormat("Habilidade: %s", estado->jogador2->habilidade);
+    Vector2 tamanhoHab2 = MeasureTextEx(fonte, habilidadeP2, 18, 2);
+    DrawTextEx(fonte, habilidadeP2, (Vector2){margemDireita + larguraBarra - tamanhoHab2.x, 115}, 18, 2, estado->jogador2->corHabilidade);
+
+    // === INFORMAÇÕES CENTRAIS ===
+    // Round atual
     const char *textoRound = TextFormat("ROUND %d/%d", estado->roundAtual, MAX_ROUNDS);
-    DrawTextEx(fonte, textoRound, (Vector2){LARGURA_TELA / 2 - MeasureTextEx(fonte, textoRound, 36, 2).x / 2, 30}, 36, 2, YELLOW);
+    Vector2 tamanhoRound = MeasureTextEx(fonte, textoRound, 32, 2);
+    DrawTextEx(fonte, textoRound, (Vector2){LARGURA_TELA / 2 - tamanhoRound.x / 2, 25}, 32, 2, YELLOW);
+
+    // Timer com efeito de urgência
+    Color corTempo = WHITE;
+    if (estado->tempoRound <= 10.0f)
+    {
+        float intensidade = 0.5f + 0.5f * sin(GetTime() * 8);
+        corTempo = ColorLerp(WHITE, RED, intensidade);
+    }
 
     const char *textoTempo = TextFormat("%.0f", estado->tempoRound);
-    DrawTextEx(fonte, textoTempo, (Vector2){LARGURA_TELA / 2 - MeasureTextEx(fonte, textoTempo, 52, 2).x / 2, 70}, 52, 2, WHITE);
+    Vector2 tamanhoTempo = MeasureTextEx(fonte, textoTempo, 48, 2);
+    // Sombra do tempo
+    DrawTextEx(fonte, textoTempo, (Vector2){LARGURA_TELA / 2 - tamanhoTempo.x / 2 + 2, 62}, 48, 2, BLACK);
+    DrawTextEx(fonte, textoTempo, (Vector2){LARGURA_TELA / 2 - tamanhoTempo.x / 2, 60}, 48, 2, corTempo);
+
+    // Indicador VS entre os jogadores
+    const char *textoVS = "VS";
+    Vector2 tamanhoVS = MeasureTextEx(fonte, textoVS, 24, 2);
+    DrawTextEx(fonte, textoVS, (Vector2){LARGURA_TELA / 2 - tamanhoVS.x / 2, 135}, 24, 2, Fade(WHITE, 0.8f));
 }
 
 void DesenharTelaSelecaoMapa(Mapa mapas[], int mapaAtual, Font fonte)
@@ -640,7 +723,7 @@ void InicializarPersonagem(Personagem *p, const char *nomePersonagem)
     p->vidaMaxima = VIDA_MAXIMA;
     p->vidaAtual = VIDA_MAXIMA;
     p->poderMaximo = PODER_MAXIMO;
-    p->poderAtual = 0;
+    p->poderAtual = PODER_MAXIMO; // Começar com poder no máximo
     p->danoSoco = 20;
     p->danoChute = 30;
     p->danoPoder = 50;
@@ -947,42 +1030,78 @@ int main(void)
     int menuSelecionado = 0;
 
     Personagem personagens[MAX_PERSONAGENS] = {
-        {LoadTexture("./personagens/kaelPerfil.jpg"),
-         "Kael",
-         "Fogo",
-         "Homem de pele morena, corpo forte e definido. Treinou com monges e feiticeiros, aprendendo a controlar o fogo. Agora é caçador de monstros e artefatos arcanos.",
-         RED,
-         LoadTexture("./personagens/kael.jpg"), LoadTexture("./personagens/kael.jpg"), LoadTexture("./personagens/kael.jpg"), LoadTexture("./personagens/kael.jpg")},
-        {LoadTexture("./personagens/milenaPerfil.jpg"),
-         "Dandara",
-         "Gelo",
-         "Mulher esbelta com cabelos rosas. Ex-mercenária abandonada por seu grupo, tornou-se caçadora de recompensas. Guerreira experiente e astuta.",
-         SKYBLUE,
-         LoadTexture("./personagens/milena.jpg"), LoadTexture("./personagens/milena.jpg"), LoadTexture("./personagens/milena.jpg"), LoadTexture("./personagens/milena.jpg")},
-        {LoadTexture("./personagens/juliaPerfil.jpg"),
-         "Valéria",
-         "Gelo",
-         "Porte ágil, cabelos castanho-escuros curtos. Após assassinato dos pais, trabalhou como mensageira e espiã. Hoje é caçadora de segredos.",
-         SKYBLUE,
-         LoadTexture("./personagens/julia.jpg"), LoadTexture("./personagens/julia.jpg"), LoadTexture("./personagens/julia.jpg"), LoadTexture("./personagens/julia.jpg")},
-        {LoadTexture("./personagens/kaykPerfil.jpg"),
-         "Tim",
-         "Gelo",
-         "Jovem guerreiro das montanhas. Treinado pelo avô, carrega kimono herdado. Promessa de usar força apenas para proteger outros.",
-         SKYBLUE,
-         LoadTexture("./personagens/kayk.png"), LoadTexture("./personagens/kayk.png"), LoadTexture("./personagens/kayk.png"), LoadTexture("./personagens/kayk.png")},
-        {LoadTexture("./personagens/joaoPerfil.jpg"),
-         "Joana",
-         "Fogo",
-         "Perita em artes marciais. Quando vê pessoas em perigo, usa suas habilidades e domínio sobre o fogo para deter inimigos.",
-         RED,
-         LoadTexture("./personagens/joao.png"), LoadTexture("./personagens/joao.png"), LoadTexture("./personagens/joao.png"), LoadTexture("./personagens/joao.png")},
-        {LoadTexture("./personagens/yuriPerfil.jpg"),
-         "Yuri",
-         "Fogo",
-         "Físico construído para combate. Ex-capitão da guarda, foi traído e preso. Fugiu e vive como mercenário e guarda-costas.",
-         RED,
-         LoadTexture("./personagens/yuri.jpg"), LoadTexture("./personagens/yuri.jpg"), LoadTexture("./personagens/yuri.jpg"), LoadTexture("./personagens/yuri.jpg")}};
+        {.textura = LoadTexture("./personagens/kaelPerfil.jpg"),
+         .nome = "Kael",
+         .habilidade = "Fogo",
+         .historia = "Homem de pele morena, corpo forte e definido. Treinou com monges e feiticeiros, aprendendo a controlar o fogo. Agora é caçador de monstros e artefatos arcanos.",
+         .corHabilidade = RED,
+         .texturaLuta = LoadTexture("./personagens/kael.jpg"),
+         .texturaWalk = LoadTexture("./personagens/kael.jpg"),
+         .texturaSoco = LoadTexture("./personagens/kael.jpg"),
+         .texturaChute = LoadTexture("./personagens/kael.jpg"),
+         .texturaPoder = LoadTexture("./personagens/kael.jpg"),
+         .texturaDefesa = LoadTexture("./personagens/kael.jpg"),
+         .texturaDano = LoadTexture("./personagens/kael.jpg")},
+        {.textura = LoadTexture("./personagens/milenaPerfil.jpg"),
+         .nome = "Dandara",
+         .habilidade = "Gelo",
+         .historia = "Mulher esbelta com cabelos rosas. Ex-mercenária abandonada por seu grupo, tornou-se caçadora de recompensas. Guerreira experiente e astuta.",
+         .corHabilidade = SKYBLUE,
+         .texturaLuta = LoadTexture("./personagens/milena.jpg"),
+         .texturaWalk = LoadTexture("./personagens/milena.jpg"),
+         .texturaSoco = LoadTexture("./personagens/milena.jpg"),
+         .texturaChute = LoadTexture("./personagens/milena.jpg"),
+         .texturaPoder = LoadTexture("./personagens/milena.jpg"),
+         .texturaDefesa = LoadTexture("./personagens/milena.jpg"),
+         .texturaDano = LoadTexture("./personagens/milena.jpg")},
+        {.textura = LoadTexture("./personagens/juliaPerfil.jpg"),
+         .nome = "Valéria",
+         .habilidade = "Gelo",
+         .historia = "Porte ágil, cabelos castanho-escuros curtos. Após assassinato dos pais, trabalhou como mensageira e espiã. Hoje é caçadora de segredos.",
+         .corHabilidade = SKYBLUE,
+         .texturaLuta = LoadTexture("./personagens/julia.jpg"),
+         .texturaWalk = LoadTexture("./personagens/julia.jpg"),
+         .texturaSoco = LoadTexture("./personagens/julia.jpg"),
+         .texturaChute = LoadTexture("./personagens/julia.jpg"),
+         .texturaPoder = LoadTexture("./personagens/julia.jpg"),
+         .texturaDefesa = LoadTexture("./personagens/julia.jpg"),
+         .texturaDano = LoadTexture("./personagens/julia.jpg")},
+        {.textura = LoadTexture("./personagens/kaykPerfil.jpg"),
+         .nome = "Tim",
+         .habilidade = "Gelo",
+         .historia = "Jovem guerreiro das montanhas. Treinado pelo avô, carrega kimono herdado. Promessa de usar força apenas para proteger outros.",
+         .corHabilidade = SKYBLUE,
+         .texturaLuta = LoadTexture("./personagens/kayk.png"),
+         .texturaWalk = LoadTexture("./personagens/kayk.png"),
+         .texturaSoco = LoadTexture("./personagens/kayk.png"),
+         .texturaChute = LoadTexture("./personagens/kayk.png"),
+         .texturaPoder = LoadTexture("./personagens/kayk.png"),
+         .texturaDefesa = LoadTexture("./personagens/kayk.png"),
+         .texturaDano = LoadTexture("./personagens/kayk.png")},
+        {.textura = LoadTexture("./personagens/joaoPerfil.jpg"),
+         .nome = "Joana",
+         .habilidade = "Fogo",
+         .historia = "Perita em artes marciais. Quando vê pessoas em perigo, usa suas habilidades e domínio sobre o fogo para deter inimigos.",
+         .corHabilidade = RED,
+         .texturaLuta = LoadTexture("./personagens/joao.png"),
+         .texturaWalk = LoadTexture("./personagens/joao.png"),
+         .texturaSoco = LoadTexture("./personagens/joao.png"),
+         .texturaChute = LoadTexture("./personagens/joao.png"),
+         .texturaPoder = LoadTexture("./personagens/joao.png"),
+         .texturaDefesa = LoadTexture("./personagens/joao.png"),
+         .texturaDano = LoadTexture("./personagens/joao.png")},
+        {.textura = LoadTexture("./personagens/yuriPerfil.jpg"),
+         .nome = "Yuri",
+         .habilidade = "Fogo",
+         .historia = "Físico construído para combate. Ex-capitão da guarda, foi traído e preso. Fugiu e vive como mercenário e guarda-costas.",
+         .corHabilidade = RED,
+         .texturaLuta = LoadTexture("./personagens/yuri.jpg"),
+         .texturaWalk = LoadTexture("./personagens/yuri.jpg"),
+         .texturaSoco = LoadTexture("./personagens/yuri.jpg"),
+         .texturaChute = LoadTexture("./personagens/yuri.jpg"),
+         .texturaPoder = LoadTexture("./personagens/yuri.jpg"),
+         .texturaDefesa = LoadTexture("./personagens/yuri.jpg"),
+         .texturaDano = LoadTexture("./personagens/yuri.jpg")}};
 
     for (int i = 0; i < MAX_PERSONAGENS; i++)
     {
@@ -1557,258 +1676,117 @@ int main(void)
                            (Rectangle){offsetTremor, offsetTremor, LARGURA_TELA, ALTURA_TELA},
                            (Vector2){0, 0}, 0.0f, WHITE);
 
-            // Sistema de renderização melhorado com animações suaves
-            Texture2D texturaPlayer1 = ObterTexturaAtual(estado.jogador1);
-            Texture2D texturaPlayer2 = ObterTexturaAtual(estado.jogador2);
+            // === RENDERIZAÇÃO MELHORADA DOS PERSONAGENS ===
 
-            // Obter source rectangles para sprites
-            Rectangle sourcePlayer1 = ObterSourceRectSprite(estado.jogador1);
-            Rectangle sourcePlayer2 = ObterSourceRectSprite(estado.jogador2);
+            // Configurações base para renderização
+            float larguraPersonagemBase = 200.0f; // Aumentado para melhor visibilidade
+            float alturaPersonagemBase = 280.0f;  // Aumentado para melhor visibilidade
 
-            float offsetX1 = 0, offsetY1 = 0;
-            float offsetX2 = 0, offsetY2 = 0;
-            float escalaX1 = 1.0f, escalaY1 = 1.0f;
-            float escalaX2 = 1.0f, escalaY2 = 1.0f;
+            // Player 1 - Posicionamento e renderização
+            float larguraP1 = larguraPersonagemBase;
+            float alturaP1 = alturaPersonagemBase;
 
-            // Animações Player 1 com movimentos mais fluidos
-            if (estado.jogador1->animando)
-            {
-                float progresso = estado.jogador1->timerAnimacao / estado.jogador1->duracaoAnimacao;
-                float intensidade = sin(progresso * 3.14159f);
-                float intensidadeQuadratica = intensidade * intensidade;
+            // Centralizar personagem no chão
+            float renderXP1 = estado.jogador1->posicao.x - larguraP1 / 2;
+            float renderYP1 = estado.chao - alturaP1;
 
-                switch (estado.jogador1->poseAtual)
-                {
-                case POSE_SOCO:
-                    offsetX1 = estado.jogador1->viradoParaDireita ? (30 * intensidadeQuadratica) : (-30 * intensidadeQuadratica);
-                    escalaX1 = 1.0f + (0.1f * intensidade); // Leve aumento na largura
-                    break;
-                case POSE_CHUTE:
-                    offsetX1 = estado.jogador1->viradoParaDireita ? (40 * intensidadeQuadratica) : (-40 * intensidadeQuadratica);
-                    offsetY1 = -20 * intensidade;            // Salto suave
-                    escalaY1 = 1.0f + (0.15f * intensidade); // Esticamento vertical
-                    break;
-                case POSE_PODER:
-                    // Levitação com movimento circular
-                    offsetY1 = -25 * sin(GetTime() * 6) - 10;
-                    offsetX1 = 8 * sin(GetTime() * 10);
-                    escalaX1 = 1.0f + 0.2f * sin(GetTime() * 8);
-                    escalaY1 = 1.0f + 0.1f * cos(GetTime() * 8);
-                    break;
-                case POSE_DANO:
-                    offsetX1 = estado.jogador1->viradoParaDireita ? (-25 * intensidade) : (25 * intensidade);
-                    offsetY1 = 8 * sin(GetTime() * 20);     // Tremor rápido
-                    escalaX1 = 1.0f - (0.1f * intensidade); // Encolhimento
-                    break;
-                case POSE_DEFESA:
-                    offsetX1 = estado.jogador1->viradoParaDireita ? (-10 * intensidade) : (10 * intensidade);
-                    escalaY1 = 0.95f; // Postura mais baixa
-                    break;
-                case POSE_WALK:
-                    // Balanço natural da caminhada
-                    offsetY1 = 3 * sin(estado.jogador1->frameAtual * 1.5f);
-                    break;
-                case POSE_IDLE:
-                default:
-                    // Respiração mais natural
-                    offsetY1 = 3 * sin(GetTime() * 1.5f);
-                    escalaY1 = 1.0f + 0.02f * sin(GetTime() * 2);
-                    break;
-                }
-            }
-            else
-            {
-                // Animação idle quando não está atacando
-                offsetY1 = 3 * sin(GetTime() * 1.5f);
-                escalaY1 = 1.0f + 0.02f * sin(GetTime() * 2);
-            }
+            Rectangle destP1 = {renderXP1, renderYP1, larguraP1, alturaP1};
+            Vector2 origemP1 = {0, 0};
 
-            // Animações Player 2 com movimentos mais fluidos
-            if (estado.jogador2->animando)
-            {
-                float progresso = estado.jogador2->timerAnimacao / estado.jogador2->duracaoAnimacao;
-                float intensidade = sin(progresso * 3.14159f);
-                float intensidadeQuadratica = intensidade * intensidade;
-
-                switch (estado.jogador2->poseAtual)
-                {
-                case POSE_SOCO:
-                    offsetX2 = estado.jogador2->viradoParaDireita ? (30 * intensidadeQuadratica) : (-30 * intensidadeQuadratica);
-                    escalaX2 = 1.0f + (0.1f * intensidade);
-                    break;
-                case POSE_CHUTE:
-                    offsetX2 = estado.jogador2->viradoParaDireita ? (40 * intensidadeQuadratica) : (-40 * intensidadeQuadratica);
-                    offsetY2 = -20 * intensidade;
-                    escalaY2 = 1.0f + (0.15f * intensidade);
-                    break;
-                case POSE_PODER:
-                    offsetY2 = -25 * sin(GetTime() * 6) - 10;
-                    offsetX2 = 8 * sin(GetTime() * 10);
-                    escalaX2 = 1.0f + 0.2f * sin(GetTime() * 8);
-                    escalaY2 = 1.0f + 0.1f * cos(GetTime() * 8);
-                    break;
-                case POSE_DANO:
-                    offsetX2 = estado.jogador2->viradoParaDireita ? (-25 * intensidade) : (25 * intensidade);
-                    offsetY2 = 8 * sin(GetTime() * 20);
-                    escalaX2 = 1.0f - (0.1f * intensidade);
-                    break;
-                case POSE_DEFESA:
-                    offsetX2 = estado.jogador2->viradoParaDireita ? (-10 * intensidade) : (10 * intensidade);
-                    escalaY2 = 0.95f;
-                    break;
-                case POSE_WALK:
-                    offsetY2 = 3 * sin(estado.jogador2->frameAtual * 1.5f);
-                    break;
-                case POSE_IDLE:
-                default:
-                    offsetY2 = 3 * sin(GetTime() * 1.5f);
-                    escalaY2 = 1.0f + 0.02f * sin(GetTime() * 2);
-                    break;
-                }
-            }
-            else
-            {
-                offsetY2 = 3 * sin(GetTime() * 1.5f);
-                escalaY2 = 1.0f + 0.02f * sin(GetTime() * 2);
-            }
-
-            // Efeito de brilho e cor durante animação (melhorado)
-            Color corPlayer1 = WHITE;
-            Color corPlayer2 = WHITE;
-
-            if (estado.jogador1->animando)
-            {
-                float intensidade = 0.3f + 0.4f * sin(GetTime() * 12);
-                switch (estado.jogador1->poseAtual)
-                {
-                case POSE_PODER:
-                    corPlayer1 = ColorLerp(WHITE, estado.jogador1->corHabilidade, intensidade * 0.7f);
-                    break;
-                case POSE_SOCO:
-                    corPlayer1 = ColorLerp(WHITE, YELLOW, intensidade * 0.4f);
-                    break;
-                case POSE_CHUTE:
-                    corPlayer1 = ColorLerp(WHITE, ORANGE, intensidade * 0.4f);
-                    break;
-                case POSE_DANO:
-                    corPlayer1 = ColorLerp(WHITE, RED, intensidade * 0.6f);
-                    break;
-                case POSE_DEFESA:
-                    corPlayer1 = ColorLerp(WHITE, BLUE, intensidade * 0.3f);
-                    break;
-                case POSE_IDLE:
-                default:
-                    break;
-                }
-            }
-
-            if (estado.jogador2->animando)
-            {
-                float intensidade = 0.3f + 0.4f * sin(GetTime() * 12);
-                switch (estado.jogador2->poseAtual)
-                {
-                case POSE_PODER:
-                    corPlayer2 = ColorLerp(WHITE, estado.jogador2->corHabilidade, intensidade * 0.7f);
-                    break;
-                case POSE_SOCO:
-                    corPlayer2 = ColorLerp(WHITE, YELLOW, intensidade * 0.4f);
-                    break;
-                case POSE_CHUTE:
-                    corPlayer2 = ColorLerp(WHITE, ORANGE, intensidade * 0.4f);
-                    break;
-                case POSE_DANO:
-                    corPlayer2 = ColorLerp(WHITE, RED, intensidade * 0.6f);
-                    break;
-                case POSE_DEFESA:
-                    corPlayer2 = ColorLerp(WHITE, BLUE, intensidade * 0.3f);
-                    break;
-                case POSE_IDLE:
-                default:
-                    break;
-                }
-            }
-
-            // Renderizar personagens com sistema avançado de animação
-            float larguraBase = 200.0f;
-            float alturaBase = 280.0f;
-
-            // Aplicar escalas às dimensões
-            float larguraPersonagem1 = larguraBase * escalaX1;
-            float alturaPersonagem1 = alturaBase * escalaY1;
-            float larguraPersonagem2 = larguraBase * escalaX2;
-            float alturaPersonagem2 = alturaBase * escalaY2;
-
-            // Calcular posições de renderização com offsets suaves
-            float renderX1 = estado.jogador1->posicao.x - larguraPersonagem1 / 2 + offsetX1;
-            float renderY1 = estado.jogador1->posicao.y - alturaPersonagem1 + offsetY1;
-            float renderX2 = estado.jogador2->posicao.x - larguraPersonagem2 / 2 + offsetX2;
-            float renderY2 = estado.jogador2->posicao.y - alturaPersonagem2 + offsetY2;
-
-            // Player 1 - com sistema de flip melhorado
-            Rectangle destPlayer1 = {renderX1, renderY1, larguraPersonagem1, alturaPersonagem1};
-            Vector2 origemPlayer1 = {0, 0};
-
+            // Aplicar flip horizontal se necessário
             if (!estado.jogador1->viradoParaDireita)
             {
-                destPlayer1.width = -larguraPersonagem1; // Flip horizontal
-                origemPlayer1.x = larguraPersonagem1;    // Ajustar origem para flip
+                destP1.width = -larguraP1;
+                origemP1.x = larguraP1;
             }
 
-            DrawTexturePro(texturaPlayer1, sourcePlayer1, destPlayer1, origemPlayer1, 0.0f, corPlayer1);
+            // Player 2 - Posicionamento e renderização
+            float larguraP2 = larguraPersonagemBase;
+            float alturaP2 = alturaPersonagemBase;
 
-            // Player 2 - com sistema de flip melhorado
-            Rectangle destPlayer2 = {renderX2, renderY2, larguraPersonagem2, alturaPersonagem2};
-            Vector2 origemPlayer2 = {0, 0};
+            float renderXP2 = estado.jogador2->posicao.x - larguraP2 / 2;
+            float renderYP2 = estado.chao - alturaP2;
+
+            Rectangle destP2 = {renderXP2, renderYP2, larguraP2, alturaP2};
+            Vector2 origemP2 = {0, 0};
 
             if (!estado.jogador2->viradoParaDireita)
             {
-                destPlayer2.width = -larguraPersonagem2; // Flip horizontal
-                origemPlayer2.x = larguraPersonagem2;    // Ajustar origem para flip
+                destP2.width = -larguraP2;
+                origemP2.x = larguraP2;
             }
 
-            DrawTexturePro(texturaPlayer2, sourcePlayer2, destPlayer2, origemPlayer2, 0.0f, corPlayer2);
+            // === EFEITOS VISUAIS MELHORADOS ===
 
-            // Efeitos visuais adicionais durante ataques especiais
+            // Sombras dos personagens (mais visíveis)
+            Color corSombra = Fade(BLACK, 0.4f);
+            DrawEllipse((int)estado.jogador1->posicao.x, (int)(estado.chao + 5), (int)(larguraP1 * 0.5f), 20, corSombra);
+            DrawEllipse((int)estado.jogador2->posicao.x, (int)(estado.chao + 5), (int)(larguraP2 * 0.5f), 20, corSombra);
+
+            // Obter texturas corretas - usar sempre a texturaLuta que é a principal
+            Texture2D texturaPlayer1 = estado.jogador1->texturaLuta;
+            Texture2D texturaPlayer2 = estado.jogador2->texturaLuta;
+
+            // Source rectangle simples - usar textura completa
+            Rectangle sourcePlayer1 = {0, 0, (float)texturaPlayer1.width, (float)texturaPlayer1.height};
+            Rectangle sourcePlayer2 = {0, 0, (float)texturaPlayer2.width, (float)texturaPlayer2.height};
+
+            // Cores dos personagens
+            Color corPlayer1 = WHITE;
+            Color corPlayer2 = WHITE;
+
+            // Renderizar personagens com as texturas corretas
+            DrawTexturePro(texturaPlayer1, sourcePlayer1, destP1, origemP1, 0.0f, corPlayer1);
+            DrawTexturePro(texturaPlayer2, sourcePlayer2, destP2, origemP2, 0.0f, corPlayer2);
+
+            // Auras de poder melhoradas
             if (estado.jogador1->poseAtual == POSE_PODER && estado.jogador1->animando)
             {
-                // Aura de poder para Player 1
-                float raioAura = 80 + 20 * sin(GetTime() * 10);
-                DrawCircleLines(estado.jogador1->posicao.x, estado.jogador1->posicao.y - 100, raioAura,
-                                Fade(estado.jogador1->corHabilidade, 0.6f));
-                DrawCircleLines(estado.jogador1->posicao.x, estado.jogador1->posicao.y - 100, raioAura - 10,
-                                Fade(estado.jogador1->corHabilidade, 0.3f));
+                float raioAura = 60 + 15 * sin(GetTime() * 12);
+                Vector2 centroAura = {estado.jogador1->posicao.x, estado.jogador1->posicao.y - 80};
+
+                // Múltiplos círculos para efeito de aura
+                for (int i = 0; i < 3; i++)
+                {
+                    float alpha = (0.4f - i * 0.1f) * sin(GetTime() * 8 + i);
+                    DrawCircleLines((int)centroAura.x, (int)centroAura.y, raioAura + i * 10,
+                                    Fade(estado.jogador1->corHabilidade, fabs(alpha)));
+                }
             }
 
             if (estado.jogador2->poseAtual == POSE_PODER && estado.jogador2->animando)
             {
-                // Aura de poder para Player 2
-                float raioAura = 80 + 20 * sin(GetTime() * 10);
-                DrawCircleLines(estado.jogador2->posicao.x, estado.jogador2->posicao.y - 100, raioAura,
-                                Fade(estado.jogador2->corHabilidade, 0.6f));
-                DrawCircleLines(estado.jogador2->posicao.x, estado.jogador2->posicao.y - 100, raioAura - 10,
-                                Fade(estado.jogador2->corHabilidade, 0.3f));
+                float raioAura = 60 + 15 * sin(GetTime() * 12);
+                Vector2 centroAura = {estado.jogador2->posicao.x, estado.jogador2->posicao.y - 80};
+
+                for (int i = 0; i < 3; i++)
+                {
+                    float alpha = (0.4f - i * 0.1f) * sin(GetTime() * 8 + i);
+                    DrawCircleLines((int)centroAura.x, (int)centroAura.y, raioAura + i * 10,
+                                    Fade(estado.jogador2->corHabilidade, fabs(alpha)));
+                }
             }
 
             // Desenhar hitboxes para debug (opcional - remover depois)
             if (false) // Mude para true para ver as hitboxes
             {
-                DrawRectangleLines(estado.jogador1->hitbox.x, estado.jogador1->hitbox.y,
-                                   estado.jogador1->hitbox.width, estado.jogador1->hitbox.height, GREEN);
-                DrawRectangleLines(estado.jogador2->hitbox.x, estado.jogador2->hitbox.y,
-                                   estado.jogador2->hitbox.width, estado.jogador2->hitbox.height, RED);
+                DrawRectangleLines((int)estado.jogador1->hitbox.x, (int)estado.jogador1->hitbox.y,
+                                   (int)estado.jogador1->hitbox.width, (int)estado.jogador1->hitbox.height, GREEN);
+                DrawRectangleLines((int)estado.jogador2->hitbox.x, (int)estado.jogador2->hitbox.y,
+                                   (int)estado.jogador2->hitbox.width, (int)estado.jogador2->hitbox.height, RED);
 
                 // Desenhar alcance de ataque se atacando
                 if (estado.jogador1->poseAtual == POSE_SOCO || estado.jogador1->poseAtual == POSE_CHUTE || estado.jogador1->poseAtual == POSE_PODER)
                 {
                     AtualizarAlcanceAtaque(estado.jogador1);
-                    DrawRectangleLines(estado.jogador1->alcanceAtaque.x, estado.jogador1->alcanceAtaque.y,
-                                       estado.jogador1->alcanceAtaque.width, estado.jogador1->alcanceAtaque.height, BLUE);
+                    DrawRectangleLines((int)estado.jogador1->alcanceAtaque.x, (int)estado.jogador1->alcanceAtaque.y,
+                                       (int)estado.jogador1->alcanceAtaque.width, (int)estado.jogador1->alcanceAtaque.height, BLUE);
                 }
                 if (estado.jogador2->poseAtual == POSE_SOCO || estado.jogador2->poseAtual == POSE_CHUTE || estado.jogador2->poseAtual == POSE_PODER)
                 {
                     AtualizarAlcanceAtaque(estado.jogador2);
-                    DrawRectangleLines(estado.jogador2->alcanceAtaque.x, estado.jogador2->alcanceAtaque.y,
-                                       estado.jogador2->alcanceAtaque.width, estado.jogador2->alcanceAtaque.height, YELLOW);
+                    DrawRectangleLines((int)estado.jogador2->alcanceAtaque.x, (int)estado.jogador2->alcanceAtaque.y,
+                                       (int)estado.jogador2->alcanceAtaque.width, (int)estado.jogador2->alcanceAtaque.height, YELLOW);
                 }
             }
 
