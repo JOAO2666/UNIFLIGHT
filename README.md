@@ -1,15 +1,15 @@
-# 🥊 UNI FIGHT - Jogo de Luta.
+#  UNI FIGHT - Jogo de Luta.
 
 Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens únicos com habilidades elementais.
 
-## 🎓 Projeto Acadêmico
+##  Projeto Acadêmico
 - **Disciplina**: Algoritmos e Programação
 - **Professora**: Ana Emília
 - **Equipe**: Eduardo dos Santos Ferreira Sousa (Líder), Milena Franca de Oliveira, Julia Ribeiro da Silva Carvalho, João Emanuel Almeida Ramos, Kayk Souza Calixto
 
 > **Documentação Acadêmica Completa**: Consulte `DOCUMENTACAO_ACADEMICA.md`
 
-## 🚀 COMPILAÇÃO RÁPIDA - NOTEPAD++
+##  COMPILAÇÃO RÁPIDA - NOTEPAD++
 
 ### Para Notepad++ (Método Simples):
 1. **Instale MinGW-w64** e **Raylib**
@@ -20,15 +20,15 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
    ```
 4. **Compile e execute!**
 
-> 📋 **Guia Completo**: Veja `NOTEPAD_SETUP.md` para instruções detalhadas
+>  **Guia Completo**: Veja `NOTEPAD_SETUP.md` para instruções detalhadas
 
 ### Scripts Disponíveis:
 - `compile_simple.bat` - Compilação rápida
 - `compile_notepad.bat` - Compilação com detecção automática
 
-## ✨ Melhorias Recentes Implementadas
+##  Melhorias Recentes Implementadas
 
-### 🎮 Interface de Combate Aprimorada
+###  Interface de Combate Aprimorada
 - **HUD Redesenhado**: Interface mais limpa e profissional com gradientes e efeitos visuais
 - **Barras de Vida Melhoradas**: 
   - Gradientes de cor baseados na porcentagem de vida
@@ -40,7 +40,7 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
   - Indicador visual "ESPECIAL PRONTO!" com animação
   - Partículas visuais ao redor da barra quando carregada
 
-### 👥 Organização dos Personagens
+###  Organização dos Personagens
 - **Renderização Otimizada**: Personagens melhor posicionados e proporcionais na tela
 - **Efeitos Visuais Melhorados**:
   - Sombras realistas sob os personagens
@@ -53,7 +53,7 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
 - Estrutura mais limpa e organizada
 - Mantidos apenas os arquivos essenciais para o funcionamento
 
-## 🎯 Características Principais
+##  Características Principais
 
 ### Personagens Disponíveis
 1. **Kael** - Especialista em Fogo
@@ -74,7 +74,7 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
 - Desde vulcões até templos gelados
 - Cada mapa com sua própria atmosfera visual
 
-## 🎮 Controles
+##  Controles
 
 ### Player 1
 - **A/D**: Movimento
@@ -88,7 +88,7 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
 - **I**: Chute
 - **P**: Poder Especial (quando disponível)
 
-## 🛠️ Compilação Detalhada
+##  Compilação Detalhada
 
 ### Requisitos:
 - **MinGW-w64** (GCC para Windows)
@@ -101,7 +101,7 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
    - `unifight/raylib/` (pasta local)
    - `C:\raylib\` (pasta global)
 
-## 📁 Estrutura de Arquivos
+##  Estrutura de Arquivos
 
 ```
 unifight/
@@ -117,20 +117,20 @@ unifight/
 └── README.md          # Esta documentação
 ```
 
-## 🎨 Recursos Visuais
+##  Recursos Visuais
 
 - **Animações Fluidas**: Sistema de sprites com transições suaves
 - **Efeitos Especiais**: Partículas, brilhos e auras durante ataques
 - **Interface Responsiva**: HUD adaptativo com feedback visual
 - **Personagens Únicos**: Cada lutador com visual e habilidades distintas
 
-## 🎵 Recursos de Áudio
+##  Recursos de Áudio
 
 - Música de fundo ambiente
 - Efeitos sonoros para ataques (quando implementados)
 - Sistema de volume configurável
 
-## ⚙️ Opções e Configurações
+## ⚙ Opções e Configurações
 
 - Configuração de controles personalizáveis
 - Ajuste de volume de música e efeitos
