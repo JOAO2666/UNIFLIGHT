@@ -13,9 +13,9 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
 ##  Para rodar:
 
 ### Requisitos:
-- **MinGW-w64** (GCC para Windows)
-- **Raylib** (biblioteca gráfica)
-- **Notepad++ for Raylib** (recomendado)
+ **MinGW-w64** (GCC para Windows)
+ **Raylib** (biblioteca gráfica)
+ **Notepad++ for Raylib** (recomendado)
 
 ### Configuração da Raylib:
  Baixe de: https://www.raylib.com/
