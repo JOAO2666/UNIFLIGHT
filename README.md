@@ -7,24 +7,6 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
 - **Professora**: Ana Emília
 - **Equipe**: Eduardo dos Santos Ferreira Sousa (Líder), Milena Franca de Oliveira, Julia Ribeiro da Silva Carvalho, João Emanuel Almeida Ramos, Kayk Souza Calixto
 
-> **Documentação Acadêmica Completa**: Consulte `DOCUMENTACAO_ACADEMICA.md`
-
-##  COMPILAÇÃO RÁPIDA - NOTEPAD++
-
-### Para Notepad++ (Método Simples):
-1. **Instale MinGW-w64** e **Raylib**
-2. **Abra `unifight.c` no Notepad++**
-3. **Pressione F5** e configure:
-   ```
-   cmd /k cd /d "$(CURRENT_DIRECTORY)" && compile_simple.bat
-   ```
-4. **Compile e execute!**
-
->  **Guia Completo**: Veja `NOTEPAD_SETUP.md` para instruções detalhadas
-
-### Scripts Disponíveis:
-- `compile_simple.bat` - Compilação rápida
-- `compile_notepad.bat` - Compilação com detecção automática
 
 ##  Melhorias Recentes Implementadas
 
@@ -84,18 +66,16 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
 - **I**: Chute
 - **P**: Poder Especial (quando disponível)
 
-##  Compilação Detalhada
+##  Para rodar:
 
 ### Requisitos:
 - **MinGW-w64** (GCC para Windows)
 - **Raylib** (biblioteca gráfica)
-- **Notepad++** (recomendado)
+- **Notepad++ for Raylib** (recomendado)
 
 ### Configuração da Raylib:
-1. Baixe de: https://github.com/raysan5/raylib/releases
-2. Extraia em uma dessas pastas:
-   - `unifight/raylib/` (pasta local)
-   - `C:\raylib\` (pasta global)
+1. Baixe de: https://www.raylib.com/
+2. Instala o Raylib.
 
 ##  Estrutura de Arquivos
 
@@ -123,7 +103,7 @@ unifight/
 ##  Recursos de Áudio
 
 - Música de fundo ambiente
-- Efeitos sonoros para ataques (quando implementados)
+- Efeitos sonoros para ataques (quando implementados, porque ainda não tem)
 - Sistema de volume configurável
 
 ## ⚙ Opções e Configurações
