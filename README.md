@@ -27,9 +27,6 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
 - **Efeitos Visuais Melhorados**:
   - Sombras realistas sob os personagens
   - Auras de poder com múltiplos círculos animados
-  - Animações mais fluidas e responsivas
-- **Sistema de Animação Aperfeiçoado**: Movimentos mais naturais e dinâmicos
-
 
 ##  Características Principais
 
