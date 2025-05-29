@@ -2,7 +2,7 @@
 
 Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens únicos com habilidades elementais.
 
-##  Projeto Acadêmico
+##  Projeto da faculdade 
 - **Disciplina**: Algoritmos e Programação
 - **Professora**: Ana Emília
 - **Equipe**: Eduardo dos Santos Ferreira Sousa (Líder), Milena Franca de Oliveira, Julia Ribeiro da Silva Carvalho, João Emanuel Almeida Ramos, Kayk Souza Calixto
@@ -48,10 +48,6 @@ Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens único
   - Animações mais fluidas e responsivas
 - **Sistema de Animação Aperfeiçoado**: Movimentos mais naturais e dinâmicos
 
-### 🧹 Organização da Pasta
-- Removidos arquivos desnecessários e documentações obsoletas
-- Estrutura mais limpa e organizada
-- Mantidos apenas os arquivos essenciais para o funcionamento
 
 ##  Características Principais
 
@@ -119,7 +115,7 @@ unifight/
 
 ##  Recursos Visuais
 
-- **Animações Fluidas**: Sistema de sprites com transições suaves
+- **Animações Fluidas**: Sistema de sprites com transições suaves, porém falta organizar as imagens 
 - **Efeitos Especiais**: Partículas, brilhos e auras durante ataques
 - **Interface Responsiva**: HUD adaptativo com feedback visual
 - **Personagens Únicos**: Cada lutador com visual e habilidades distintas
@@ -135,10 +131,6 @@ unifight/
 - Configuração de controles personalizáveis
 - Ajuste de volume de música e efeitos
 - Sistema de salvamento de configurações
-
----
-
-**Desenvolvido com paixão para a comunidade universitária! 🎓**
 
 ## Próximos Passos
 - ✅ ~~Implementar tela de luta real~~ **CONCLUÍDO**
