@@ -32,4 +32,4 @@ unifight/
 ├── fontes/            # Arquivos de fonte
 ├── musicas/           # Arquivos de áudio
 └── README.md          # Esta documentação
-``` 
+```
