@@ -1,4 +1,4 @@
-#  UNI FIGHT - Jogo de Luta.
+#  UNIFIGHT - Jogo de Luta.
 
 Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens únicos com habilidades elementais.
 
