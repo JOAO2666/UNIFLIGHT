@@ -3,9 +3,9 @@
 Um jogo de luta 2D desenvolvido em C com Raylib, apresentando personagens únicos com habilidades elementais.
 
 ##  Projeto da faculdade 
-- **Disciplina**: Algoritmos e Programação
-- **Professora**: Ana Emília
-- **Equipe**: Eduardo dos Santos Ferreira Sousa (Líder), Milena Franca de Oliveira, Julia Ribeiro da Silva Carvalho, João Emanuel Almeida Ramos, Kayk Souza Calixto
+ **Disciplina**: Algoritmos e Programação
+ **Professora**: Ana Emília
+ **Equipe**: Eduardo dos Santos Ferreira Sousa (Líder), Milena Franca de Oliveira, Julia Ribeiro da Silva Carvalho, João Emanuel Almeida Ramos, Kayk Souza Calixto
 
 
 ##  Melhorias Recentes Implementadas
