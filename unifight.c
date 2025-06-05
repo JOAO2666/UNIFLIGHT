@@ -3,13 +3,14 @@
 #include <string.h>
 #include <math.h>
 #include "structs.c"
+#include <locale.h>
 
 #define LARGURA_TELA 1920
 #define ALTURA_TELA 1080
 #define MAX_PERSONAGENS 6
 #define OPCOES_MENU 3
 #define OPCOES_CONFIG 8
-#define MAX_MAPAS 6
+#define MAX_MAPAS 8
 #define VIDA_MAXIMA 250
 #define PODER_MAXIMO 100
 
@@ -444,7 +445,7 @@ void DesenharInfoPersonagem(Personagem personagem, int x, int y, int largura, in
     posY += espacamento;
 
     // História com fonte maior
-    const char *historiaTexto = "História:";
+    const char *historiaTexto = "Historia:";
     DrawTextEx(fonte, historiaTexto, (Vector2){x + 25, posY}, 28, 2, LIGHTGRAY);
     posY += 35;
 
@@ -906,7 +907,6 @@ const char *ObterNomeTecla(int tecla)
         return "?";
     }
 }
-
 void DesenharTelaOpcoes(ConfiguracaoJogo *config, int opcaoSelecionada, bool aguardandoTecla, Font fonte)
 {
 
@@ -1030,78 +1030,79 @@ int main(void)
     int menuSelecionado = 0;
 
     Personagem personagens[MAX_PERSONAGENS] = {
-        {.textura = LoadTexture("./personagens/kaelPerfil.jpg"),
-         .nome = "Kael",
-         .habilidade = "Fogo",
-         .historia = "Homem de pele morena, corpo forte e definido. Treinou com monges e feiticeiros, aprendendo a controlar o fogo. Agora é caçador de monstros e artefatos arcanos.",
+        {.textura = LoadTexture("./personagens/foto de perfil, selecao de personagem ryu/ryu foto de perfil.png"),
+         .nome = "Ryu",
+         .habilidade = "Hadoken",
+         .historia = "Artista marcial errante.",
+         .corHabilidade = BLUE,
+         .texturaLuta = LoadTexture("./personagens/ryu com pose parada/0.png"),
+         .texturaWalk = LoadTexture("./personagens/ryu com pose parada/0.png"),
+         .texturaSoco = LoadTexture("./personagens/ryu com pose parada/0.png"),
+         .texturaChute = LoadTexture("./personagens/ryu com pose parada/0.png"),
+         .texturaPoder = LoadTexture("./personagens/ryu com pose parada/0.png"),
+         .texturaDefesa = LoadTexture("./personagens/ryu com pose parada/0.png"),
+         .texturaDano = LoadTexture("./personagens/ryu com pose parada/0.png")},
+        {.textura = LoadTexture("./personagens/foto de perfil do ken/0.png"),
+         .nome = "Ken Masters",
+         .habilidade = "Shoryuken",
+         .historia = "Rival amigável de Ryu e campeão dos EUA.",
          .corHabilidade = RED,
-         .texturaLuta = LoadTexture("./personagens/kael.jpg"),
-         .texturaWalk = LoadTexture("./personagens/kael.jpg"),
-         .texturaSoco = LoadTexture("./personagens/kael.jpg"),
-         .texturaChute = LoadTexture("./personagens/kael.jpg"),
-         .texturaPoder = LoadTexture("./personagens/kael.jpg"),
-         .texturaDefesa = LoadTexture("./personagens/kael.jpg"),
-         .texturaDano = LoadTexture("./personagens/kael.jpg")},
-        {.textura = LoadTexture("./personagens/milenaPerfil.jpg"),
-         .nome = "Dandara",
-         .habilidade = "Gelo",
-         .historia = "Mulher esbelta com cabelos rosas. Ex-mercenária abandonada por seu grupo, tornou-se caçadora de recompensas. Guerreira experiente e astuta.",
-         .corHabilidade = SKYBLUE,
-         .texturaLuta = LoadTexture("./personagens/milena.jpg"),
-         .texturaWalk = LoadTexture("./personagens/milena.jpg"),
-         .texturaSoco = LoadTexture("./personagens/milena.jpg"),
-         .texturaChute = LoadTexture("./personagens/milena.jpg"),
-         .texturaPoder = LoadTexture("./personagens/milena.jpg"),
-         .texturaDefesa = LoadTexture("./personagens/milena.jpg"),
-         .texturaDano = LoadTexture("./personagens/milena.jpg")},
-        {.textura = LoadTexture("./personagens/juliaPerfil.jpg"),
-         .nome = "Valéria",
-         .habilidade = "Gelo",
-         .historia = "Porte ágil, cabelos castanho-escuros curtos. Após assassinato dos pais, trabalhou como mensageira e espiã. Hoje é caçadora de segredos.",
-         .corHabilidade = SKYBLUE,
-         .texturaLuta = LoadTexture("./personagens/julia.jpg"),
-         .texturaWalk = LoadTexture("./personagens/julia.jpg"),
-         .texturaSoco = LoadTexture("./personagens/julia.jpg"),
-         .texturaChute = LoadTexture("./personagens/julia.jpg"),
-         .texturaPoder = LoadTexture("./personagens/julia.jpg"),
-         .texturaDefesa = LoadTexture("./personagens/julia.jpg"),
-         .texturaDano = LoadTexture("./personagens/julia.jpg")},
-        {.textura = LoadTexture("./personagens/kaykPerfil.jpg"),
-         .nome = "Tim",
-         .habilidade = "Gelo",
-         .historia = "Jovem guerreiro das montanhas. Treinado pelo avô, carrega kimono herdado. Promessa de usar força apenas para proteger outros.",
-         .corHabilidade = SKYBLUE,
-         .texturaLuta = LoadTexture("./personagens/kayk.png"),
-         .texturaWalk = LoadTexture("./personagens/kayk.png"),
-         .texturaSoco = LoadTexture("./personagens/kayk.png"),
-         .texturaChute = LoadTexture("./personagens/kayk.png"),
-         .texturaPoder = LoadTexture("./personagens/kayk.png"),
-         .texturaDefesa = LoadTexture("./personagens/kayk.png"),
-         .texturaDano = LoadTexture("./personagens/kayk.png")},
-        {.textura = LoadTexture("./personagens/joaoPerfil.jpg"),
-         .nome = "Joana",
-         .habilidade = "Fogo",
-         .historia = "Perita em artes marciais. Quando vê pessoas em perigo, usa suas habilidades e domínio sobre o fogo para deter inimigos.",
-         .corHabilidade = RED,
-         .texturaLuta = LoadTexture("./personagens/joao.png"),
-         .texturaWalk = LoadTexture("./personagens/joao.png"),
-         .texturaSoco = LoadTexture("./personagens/joao.png"),
-         .texturaChute = LoadTexture("./personagens/joao.png"),
-         .texturaPoder = LoadTexture("./personagens/joao.png"),
-         .texturaDefesa = LoadTexture("./personagens/joao.png"),
-         .texturaDano = LoadTexture("./personagens/joao.png")},
-        {.textura = LoadTexture("./personagens/yuriPerfil.jpg"),
-         .nome = "Yuri",
-         .habilidade = "Fogo",
-         .historia = "Físico construído para combate. Ex-capitão da guarda, foi traído e preso. Fugiu e vive como mercenário e guarda-costas.",
-         .corHabilidade = RED,
-         .texturaLuta = LoadTexture("./personagens/yuri.jpg"),
-         .texturaWalk = LoadTexture("./personagens/yuri.jpg"),
-         .texturaSoco = LoadTexture("./personagens/yuri.jpg"),
-         .texturaChute = LoadTexture("./personagens/yuri.jpg"),
-         .texturaPoder = LoadTexture("./personagens/yuri.jpg"),
-         .texturaDefesa = LoadTexture("./personagens/yuri.jpg"),
-         .texturaDano = LoadTexture("./personagens/yuri.jpg")}};
+         .texturaLuta = LoadTexture("./personagens/foto de perfil do ken/0.png"),   // Placeholder
+         .texturaWalk = LoadTexture("./personagens/foto de perfil do ken/0.png"),   // Placeholder
+         .texturaSoco = LoadTexture("./personagens/foto de perfil do ken/0.png"),   // Placeholder
+         .texturaChute = LoadTexture("./personagens/foto de perfil do ken/0.png"),  // Placeholder
+         .texturaPoder = LoadTexture("./personagens/foto de perfil do ken/0.png"),  // Placeholder
+         .texturaDefesa = LoadTexture("./personagens/foto de perfil do ken/0.png"), // Placeholder
+         .texturaDano = LoadTexture("./personagens/foto de perfil do ken/0.png")},  // Placeholder
+        {.textura = LoadTexture("./personagens/guile, foto de perfil/0.png"),
+         .nome = "Guile",
+         .habilidade = "Sonic Boom",
+         .historia = "Major da Força Aérea dos EUA buscando vingança.",
+         .corHabilidade = GREEN,
+         .texturaLuta = LoadTexture("./personagens/guile parado na hora de combate/0.png"),
+         .texturaWalk = LoadTexture("./personagens/guile parado na hora de combate/0.png"),
+         .texturaSoco = LoadTexture("./personagens/guile parado na hora de combate/0.png"),
+         .texturaChute = LoadTexture("./personagens/guile parado na hora de combate/0.png"),
+         .texturaPoder = LoadTexture("./personagens/guile parado na hora de combate/0.png"),
+         .texturaDefesa = LoadTexture("./personagens/guile parado na hora de combate/0.png"),
+         .texturaDano = LoadTexture("./personagens/guile parado na hora de combate/0.png")},
+        {.textura = LoadTexture("./personagens/sagat foto de perfil/0.png"),
+         .nome = "Sagat",
+         .habilidade = "Tiger Shot",
+         .historia = "O imperador do Muay Thai.",
+         .corHabilidade = ORANGE,
+         .texturaLuta = LoadTexture("./personagens/sagat parado em pose de soco/0.png"),
+         .texturaWalk = LoadTexture("./personagens/sagat parado em pose de soco/0.png"),
+         .texturaSoco = LoadTexture("./personagens/sagat parado em pose de soco/0.png"),
+         .texturaChute = LoadTexture("./personagens/sagat parado em pose de soco/0.png"),
+         .texturaPoder = LoadTexture("./personagens/sagat parado em pose de soco/0.png"),
+         .texturaDefesa = LoadTexture("./personagens/sagat parado em pose de soco/0.png"),
+         .texturaDano = LoadTexture("./personagens/sagat parado em pose de soco/0.png")},
+        {.textura = LoadTexture("./personagens/zangief foto de perfil/0.png"),
+         .nome = "Zangief",
+         .habilidade = "Spinning Piledriver",
+         .historia = "O Ciclone Vermelho da Rússia.",
+         .corHabilidade = MAROON,
+         .texturaLuta = LoadTexture("./personagens/zangief parado na hora da luta/0.png"),
+         .texturaWalk = LoadTexture("./personagens/zangief parado na hora da luta/0.png"),
+         .texturaSoco = LoadTexture("./personagens/zangief parado na hora da luta/0.png"),
+         .texturaChute = LoadTexture("./personagens/zangief parado na hora da luta/0.png"),
+         .texturaPoder = LoadTexture("./personagens/zangief parado na hora da luta/0.png"),
+         .texturaDefesa = LoadTexture("./personagens/zangief parado na hora da luta/0.png"),
+         .texturaDano = LoadTexture("./personagens/zangief parado na hora da luta/0.png")},
+        {.textura = LoadTexture("./personagens/m_bison foto de perfil/0.png"),
+         .nome = "M. Bison",
+         .habilidade = "Psycho Crusher",
+         .historia = "Líder da Shadaloo e usuário do Psycho Power.",
+         .corHabilidade = PURPLE,
+         .texturaLuta = LoadTexture("./personagens/m_bison foto de perfil/0.png"),   // Placeholder
+         .texturaWalk = LoadTexture("./personagens/m_bison foto de perfil/0.png"),   // Placeholder
+         .texturaSoco = LoadTexture("./personagens/m_bison foto de perfil/0.png"),   // Placeholder
+         .texturaChute = LoadTexture("./personagens/m_bison foto de perfil/0.png"),  // Placeholder
+         .texturaPoder = LoadTexture("./personagens/m_bison foto de perfil/0.png"),  // Placeholder
+         .texturaDefesa = LoadTexture("./personagens/m_bison foto de perfil/0.png"), // Placeholder
+         .texturaDano = LoadTexture("./personagens/m_bison foto de perfil/0.png")}   // Placeholder
+    };
 
     for (int i = 0; i < MAX_PERSONAGENS; i++)
     {
@@ -1114,7 +1115,9 @@ int main(void)
         {LoadTexture("./frames/frame-3.png"), "Templo Gelado", "Antigo templo nas montanhas geladas. Ambiente sagrado e equilibrado."},
         {LoadTexture("./frames/frame-4.png"), "Floresta Ancestral", "Floresta antiga com ruínas místicas. Energia natural balanceada."},
         {LoadTexture("./frames/frame-5.png"), "Coliseu Neutro", "Arena equilibrada sem vantagens elementais para todos os lutadores."},
-        {LoadTexture("./frames/frame-6.png"), "Santuário Perdido", "Ruínas de um antigo santuário com poderes místicos adormecidos."}};
+        {LoadTexture("./frames/frame-6.png"), "Santuário Perdido", "Ruínas de um antigo santuário com poderes místicos adormecidos."},
+        {LoadTexture("./recursos_visuais_mapas/frame-7.png"), "Ponte Desafiadora", "Uma ponte estreita sobre um abismo."},
+        {LoadTexture("./recursos_visuais_mapas/frame-8.png"), "Cidade Neon", "Lute sob as luzes brilhantes da cidade."}};
 
     int selecionadoJogador1 = 0;
     int selecionadoJogador2 = MAX_PERSONAGENS - 1;
