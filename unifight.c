@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "structs.c"
+#include "structs.h"
 #include <locale.h>
 
 #define LARGURA_TELA 1920
@@ -724,7 +724,7 @@ void InicializarPersonagem(Personagem *p, const char *nomePersonagem)
     p->vidaMaxima = VIDA_MAXIMA;
     p->vidaAtual = VIDA_MAXIMA;
     p->poderMaximo = PODER_MAXIMO;
-    p->poderAtual = PODER_MAXIMO; // Começar com poder no máximo
+    p->poderAtual = 0; // Começar com poder zerado para acumular durante a luta
     p->danoSoco = 20;
     p->danoChute = 30;
     p->danoPoder = 50;
@@ -1333,6 +1333,9 @@ int main(void)
                 // Fazer os personagens se virarem um para o outro
                 VirarPersonagemParaOponente(estado.jogador1, estado.jogador2);
 
+                // Resetar timer de vitória ao iniciar nova luta
+                float timerVitoria = 0.0f;
+
                 telaAtual = TELA_LUTA;
                 printf("Mapa selecionado: %s\n", mapas[mapaAtual].nome);
                 printf("Posições inicializadas - P1: (%.0f, %.0f) P2: (%.0f, %.0f)\n",
@@ -1480,7 +1483,6 @@ int main(void)
                 DrawTextEx(fontePixel, "Voltando ao menu em instantes...", (Vector2){LARGURA_TELA / 2 - 200, ALTURA_TELA / 2 + 50}, 28, 2, WHITE);
 
                 // Delay antes de voltar ao menu
-                static float timerVitoria = 0;
                 timerVitoria += GetFrameTime();
 
                 if (timerVitoria > 3.0f || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE))
@@ -1835,6 +1837,12 @@ int main(void)
     {
         UnloadTexture(personagens[i].textura);
         UnloadTexture(personagens[i].texturaLuta);
+        UnloadTexture(personagens[i].texturaWalk);
+        UnloadTexture(personagens[i].texturaSoco);
+        UnloadTexture(personagens[i].texturaChute);
+        UnloadTexture(personagens[i].texturaPoder);
+        UnloadTexture(personagens[i].texturaDefesa);
+        UnloadTexture(personagens[i].texturaDano);
     }
 
     for (int i = 0; i < MAX_MAPAS; i++)
@@ -1848,6 +1856,7 @@ int main(void)
     UnloadFont(fontePixel);
 
     UnloadMusicStream(musicaFundo);
+    
     CloseAudioDevice();
 
     CloseWindow();
